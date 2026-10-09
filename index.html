@@ -529,7 +529,18 @@
     @media (min-width:700px) { .avatar-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
     @media (max-width:420px) { .avatar-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } .avatar-picker { padding:9px; } }
 
-  </style>
+  
+    .nickname-avatar-row { display:flex; align-items:center; gap:10px; }
+    .nickname-avatar-row #playerName { flex:1; min-width:0; }
+    .avatar-current-button { flex:0 0 52px; width:52px; height:52px; padding:3px; margin:0; border-radius:50%; border:2px solid var(--straw); background:rgba(12,15,24,.95); cursor:pointer; box-shadow:0 0 12px rgba(245,197,66,.15); }
+    .avatar-current-button img { display:block; width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    #avatarPicker { position:relative; margin-top:10px; }
+    #avatarPicker[hidden] { display:none !important; }
+    #avatarPicker.avatar-picker-open { display:block; animation:avatarPickerIn .16s ease-out; }
+    @keyframes avatarPickerIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+    @media(max-width:420px) { .avatar-current-button { flex-basis:46px; width:46px; height:46px; } }
+
+</style>
 </head>
 <body class="lobby-mode">
   <!-- Background Music -->
@@ -556,8 +567,13 @@
 
     <div id="lobby" class="card">
       <div class="section-title" style="margin-top:0;">Kaptan kim?</div>
-      <input id="playerName" placeholder="Korsan adın..." maxlength="16" autocomplete="nickname" />
-      <div class="avatar-picker" id="avatarPicker">
+      <div class="nickname-avatar-row">
+        <input id="playerName" placeholder="Korsan adın..." maxlength="16" autocomplete="nickname" />
+        <button type="button" id="avatarCurrentButton" class="avatar-current-button" aria-label="Avatarını değiştir" title="Avatarını değiştir" aria-expanded="false">
+          <img id="avatarCurrentImage" src="assets/avatars/rook.webp" alt="Seçili avatar" />
+        </button>
+      </div>
+      <div class="avatar-picker" id="avatarPicker" hidden>
         <div class="avatar-picker-head">
           <div><div class="avatar-picker-title">🏴‍☠️ Korsan Avatarını Seç</div><div class="small">Bir portre seç; odada ve skor ekranında görünsün.</div></div>
           <button type="button" id="randomAvatar" class="secondary avatar-random">🎲 Rastgele</button>
@@ -872,7 +888,7 @@
     };
 
     const CHARACTERS = Object.keys(CHARACTER_DATA);
-    const CHAR_GROUP = {"Monkey D. Luffy": "Saman Hasır Korsanları", "Roronoa Zoro": "Saman Hasır Korsanları", "Nami": "Saman Hasır Korsanları", "Usopp": "Saman Hasır Korsanları", "Sanji": "Saman Hasır Korsanları", "Tony Tony Chopper": "Saman Hasır Korsanları", "Nico Robin": "Saman Hasır Korsanları", "Franky": "Saman Hasır Korsanları", "Brook": "Saman Hasır Korsanları", "Jinbe": "Saman Hasır Korsanları", "Portgas D. Ace": "Beyaz Sakal Korsanları", "Edward Newgate": "Beyaz Sakal Korsanları", "Marco": "Beyaz Sakal Korsanları", "Vista": "Beyaz Sakal Korsanları", "Jozu": "Beyaz Sakal Korsanları", "Izo": "Beyaz Sakal Korsanları", "Thatch": "Beyaz Sakal Korsanları", "Rakuyo": "Beyaz Sakal Korsanları", "Namur": "Beyaz Sakal Korsanları", "Sabo": "Devrimci Ordu", "Monkey D. Dragon": "Devrimci Ordu", "Emporio Ivankov": "Devrimci Ordu", "Koala": "Devrimci Ordu", "Hack": "Devrimci Ordu", "Morley": "Devrimci Ordu", "Belo Betty": "Devrimci Ordu", "Shanks": "Kızıl Saçlı Korsanlar", "Benn Beckman": "Kızıl Saçlı Korsanlar", "Yasopp": "Kızıl Saçlı Korsanlar", "Lucky Roo": "Kızıl Saçlı Korsanlar", "Gol D. Roger": "Roger Korsanları", "Silvers Rayleigh": "Roger Korsanları", "Scopper Gaban": "Roger Korsanları", "Crocus": "Roger Korsanları", "Buggy": "Eski Yedi Büyük Korsan", "Dracule Mihawk": "Eski Yedi Büyük Korsan", "Boa Hancock": "Eski Yedi Büyük Korsan", "Bartholomew Kuma": "Eski Yedi Büyük Korsan", "Gecko Moria": "Eski Yedi Büyük Korsan", "Trafalgar Law": "En Kötü Nesil", "Eustass Kid": "En Kötü Nesil", "Killer": "En Kötü Nesil", "X Drake": "En Kötü Nesil", "Basil Hawkins": "En Kötü Nesil", "Jewelry Bonney": "En Kötü Nesil", "Capone Bege": "En Kötü Nesil", "Scratchmen Apoo": "En Kötü Nesil", "Urouge": "En Kötü Nesil", "Bepo": "En Kötü Nesil", "Penguin": "En Kötü Nesil", "Shachi": "En Kötü Nesil", "Marshall D. Teach": "Karasakal Korsanları", "Shiryu": "Karasakal Korsanları", "Jesus Burgess": "Karasakal Korsanları", "Van Augur": "Karasakal Korsanları", "Doc Q": "Karasakal Korsanları", "Avalo Pizarro": "Karasakal Korsanları", "Sanjuan Wolf": "Karasakal Korsanları", "Catarina Devon": "Karasakal Korsanları", "Kaido": "Kaido'nun Mürettebatı", "King": "Kaido'nun Mürettebatı", "Queen": "Kaido'nun Mürettebatı", "Jack": "Kaido'nun Mürettebatı", "Yamato": "Kaido'nun Mürettebatı", "Ulti": "Kaido'nun Mürettebatı", "Page One": "Kaido'nun Mürettebatı", "Black Maria": "Kaido'nun Mürettebatı", "Sasaki": "Kaido'nun Mürettebatı", "Who's-Who": "Kaido'nun Mürettebatı", "Charlotte Linlin": "Big Mom Korsanları", "Charlotte Katakuri": "Big Mom Korsanları", "Charlotte Smoothie": "Big Mom Korsanları", "Charlotte Cracker": "Big Mom Korsanları", "Charlotte Perospero": "Big Mom Korsanları", "Charlotte Pudding": "Big Mom Korsanları", "Charlotte Brulee": "Big Mom Korsanları", "Charlotte Oven": "Big Mom Korsanları", "Charlotte Opera": "Big Mom Korsanları", "Pekoms": "Big Mom Korsanları", "Donquixote Doflamingo": "Donquixote Ailesi", "Trebol": "Donquixote Ailesi", "Diamante": "Donquixote Ailesi", "Pica": "Donquixote Ailesi", "Vergo": "Donquixote Ailesi", "Sugar": "Donquixote Ailesi", "Donquixote Rosinante": "Donquixote Ailesi", "Buffalo": "Donquixote Ailesi", "Dellinger": "Donquixote Ailesi", "Lao G": "Donquixote Ailesi", "Senor Pink": "Donquixote Ailesi", "Gladius": "Donquixote Ailesi", "Jora": "Donquixote Ailesi", "Machvise": "Donquixote Ailesi", "Baby 5": "Donquixote Ailesi", "Crocodile": "Baroque Works", "Daz Bones": "Baroque Works", "Bentham": "Baroque Works", "Galdino": "Baroque Works", "Miss Doublefinger": "Baroque Works", "Miss Goldenweek": "Baroque Works", "Mr. 5": "Baroque Works", "Miss Valentine": "Baroque Works", "Monkey D. Garp": "Deniz Kuvvetleri", "Sengoku": "Deniz Kuvvetleri", "Sakazuki": "Deniz Kuvvetleri", "Borsalino": "Deniz Kuvvetleri", "Kuzan": "Deniz Kuvvetleri", "Issho": "Deniz Kuvvetleri", "Smoker": "Deniz Kuvvetleri", "Tashigi": "Deniz Kuvvetleri", "Koby": "Deniz Kuvvetleri", "Helmeppo": "Deniz Kuvvetleri", "Hina": "Deniz Kuvvetleri", "Tsuru": "Deniz Kuvvetleri", "Sentomaru": "Deniz Kuvvetleri", "Aramaki": "Deniz Kuvvetleri", "Momonga": "Deniz Kuvvetleri", "Axe-Hand Morgan": "Deniz Kuvvetleri", "Bellemere": "Deniz Kuvvetleri", "Rob Lucci": "Dünya Hükümeti (CP)", "Kaku": "Dünya Hükümeti (CP)", "Blueno": "Dünya Hükümeti (CP)", "Kalifa": "Dünya Hükümeti (CP)", "Jabra": "Dünya Hükümeti (CP)", "Spandam": "Dünya Hükümeti (CP)", "Kozuki Oden": "Wano Ülkesi", "Kozuki Momonosuke": "Wano Ülkesi", "Kin'emon": "Wano Ülkesi", "Kikunojo": "Wano Ülkesi", "Kozuki Hiyori": "Wano Ülkesi", "Raizo": "Wano Ülkesi", "Denjiro": "Wano Ülkesi", "Kurozumi Orochi": "Wano Ülkesi", "Kurozumi Kanjuro": "Wano Ülkesi", "Tama": "Wano Ülkesi", "Kozuki Toki": "Wano Ülkesi", "Hyogoro": "Wano Ülkesi", "Ashura Doji": "Wano Ülkesi", "Ryuma": "Wano Ülkesi", "Inuarashi": "Mink Kabilesi", "Nekomamushi": "Mink Kabilesi", "Carrot": "Mink Kabilesi", "Pedro": "Mink Kabilesi", "Vivi": "Alabasta Krallığı", "Nefertari Cobra": "Alabasta Krallığı", "Pell": "Alabasta Krallığı", "Chaka": "Alabasta Krallığı", "Vinsmoke Judge": "Germa 66", "Vinsmoke Reiju": "Germa 66", "Vinsmoke Ichiji": "Germa 66", "Vinsmoke Niji": "Germa 66", "Vinsmoke Yonji": "Germa 66", "Arlong": "Arlong Korsanları", "Hatchan": "Arlong Korsanları", "Kuroobi": "Arlong Korsanları", "Chew": "Arlong Korsanları", "Hody Jones": "Balıkadam Adası", "Shirahoshi": "Balıkadam Adası", "Fisher Tiger": "Balıkadam Adası", "King Neptune": "Balıkadam Adası", "Otohime": "Balıkadam Adası", "Vander Decken IX": "Balıkadam Adası", "Hammond": "Balıkadam Adası", "Dorry": "Dev ırkı", "Brogy": "Dev ırkı", "Hajrudin": "Dev ırkı", "Jaguar D. Saul": "Dev ırkı", "Enel": "Skypiea", "Wyper": "Skypiea", "Gan Fall": "Skypiea", "Absalom": "Thriller Bark", "Dr. Hogback": "Thriller Bark", "Perona": "Thriller Bark", "Kuro": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Don Krieg": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Gin": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Alvida": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Bellamy": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Foxy": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Wapol": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Red-Leg Zeff": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Nojiko": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Kaya": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Dr. Hiriluk": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Dr. Kureha": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Caesar Clown": "Punk Hazard", "Monet": "Punk Hazard", "Rebecca": "Dressrosa", "Kyros": "Dressrosa", "Viola": "Dressrosa", "Bartolomeo": "Dressrosa", "Cavendish": "Dressrosa", "Don Chinjao": "Dressrosa", "Dr. Vegapunk": "Egghead / Bilim insanları", "Boa Marigold": "Amazon Lily (Kuja)", "Boa Sandersonia": "Amazon Lily (Kuja)", "Magellan": "Impel Down", "Shakky": "Kuja Korsanları (eski üye)", "Portgas D. Rouge": "Roger Korsanları ile bağlantılı", "Shiki": "Altın Aslan Korsanları"};
+    const CHAR_GROUP = {"Monkey D. Luffy": "Saman Hasır Korsanları", "Roronoa Zoro": "Saman Hasır Korsanları", "Nami": "Saman Hasır Korsanları", "Usopp": "Saman Hasır Korsanları", "Sanji": "Saman Hasır Korsanları", "Tony Tony Chopper": "Saman Hasır Korsanları", "Nico Robin": "Saman Hasır Korsanları", "Franky": "Saman Hasır Korsanları", "Brook": "Saman Hasır Korsanları", "Jinbe": "Saman Hasır Korsanları", "Portgas D. Ace": "Beyaz Sakal Korsanları", "Edward Newgate": "Beyaz Sakal Korsanları", "Marco": "Beyaz Sakal Korsanları", "Vista": "Beyaz Sakal Korsanları", "Jozu": "Beyaz Sakal Korsanları", "Izo": "Beyaz Sakal Korsanları", "Thatch": "Beyaz Sakal Korsanları", "Rakuyo": "Beyaz Sakal Korsanları", "Namur": "Beyaz Sakal Korsanları", "Sabo": "Devrimci Ordu", "Monkey D. Dragon": "Devrimci Ordu", "Emporio Ivankov": "Devrimci Ordu", "Koala": "Devrimci Ordu", "Hack": "Devrimci Ordu", "Morley": "Devrimci Ordu", "Belo Betty": "Devrimci Ordu", "Shanks": "Kızıl Saç Korsanları", "Benn Beckman": "Kızıl Saç Korsanları", "Yasopp": "Kızıl Saç Korsanları", "Lucky Roo": "Kızıl Saç Korsanları", "Gol D. Roger": "Roger Korsanları", "Silvers Rayleigh": "Roger Korsanları", "Scopper Gaban": "Roger Korsanları", "Crocus": "Roger Korsanları", "Buggy": "Eski Yedi Büyük Korsan", "Dracule Mihawk": "Eski Yedi Büyük Korsan", "Boa Hancock": "Eski Yedi Büyük Korsan", "Bartholomew Kuma": "Eski Yedi Büyük Korsan", "Gecko Moria": "Eski Yedi Büyük Korsan", "Trafalgar Law": "En Kötü Nesil", "Eustass Kid": "En Kötü Nesil", "Killer": "En Kötü Nesil", "X Drake": "En Kötü Nesil", "Basil Hawkins": "En Kötü Nesil", "Jewelry Bonney": "En Kötü Nesil", "Capone Bege": "En Kötü Nesil", "Scratchmen Apoo": "En Kötü Nesil", "Urouge": "En Kötü Nesil", "Bepo": "En Kötü Nesil", "Penguin": "En Kötü Nesil", "Shachi": "En Kötü Nesil", "Marshall D. Teach": "Karasakal Korsanları", "Shiryu": "Karasakal Korsanları", "Jesus Burgess": "Karasakal Korsanları", "Van Augur": "Karasakal Korsanları", "Doc Q": "Karasakal Korsanları", "Avalo Pizarro": "Karasakal Korsanları", "Sanjuan Wolf": "Karasakal Korsanları", "Catarina Devon": "Karasakal Korsanları", "Kaido": "Kaido'nun Mürettebatı", "King": "Kaido'nun Mürettebatı", "Queen": "Kaido'nun Mürettebatı", "Jack": "Kaido'nun Mürettebatı", "Yamato": "Kaido'nun Mürettebatı", "Ulti": "Kaido'nun Mürettebatı", "Page One": "Kaido'nun Mürettebatı", "Black Maria": "Kaido'nun Mürettebatı", "Sasaki": "Kaido'nun Mürettebatı", "Who's-Who": "Kaido'nun Mürettebatı", "Charlotte Linlin": "Big Mom Korsanları", "Charlotte Katakuri": "Big Mom Korsanları", "Charlotte Smoothie": "Big Mom Korsanları", "Charlotte Cracker": "Big Mom Korsanları", "Charlotte Perospero": "Big Mom Korsanları", "Charlotte Pudding": "Big Mom Korsanları", "Charlotte Brulee": "Big Mom Korsanları", "Charlotte Oven": "Big Mom Korsanları", "Charlotte Opera": "Big Mom Korsanları", "Pekoms": "Big Mom Korsanları", "Donquixote Doflamingo": "Donquixote Ailesi", "Trebol": "Donquixote Ailesi", "Diamante": "Donquixote Ailesi", "Pica": "Donquixote Ailesi", "Vergo": "Donquixote Ailesi", "Sugar": "Donquixote Ailesi", "Donquixote Rosinante": "Donquixote Ailesi", "Buffalo": "Donquixote Ailesi", "Dellinger": "Donquixote Ailesi", "Lao G": "Donquixote Ailesi", "Senor Pink": "Donquixote Ailesi", "Gladius": "Donquixote Ailesi", "Jora": "Donquixote Ailesi", "Machvise": "Donquixote Ailesi", "Baby 5": "Donquixote Ailesi", "Crocodile": "Baroque Works", "Daz Bones": "Baroque Works", "Bentham": "Baroque Works", "Galdino": "Baroque Works", "Miss Doublefinger": "Baroque Works", "Miss Goldenweek": "Baroque Works", "Mr. 5": "Baroque Works", "Miss Valentine": "Baroque Works", "Monkey D. Garp": "Deniz Kuvvetleri", "Sengoku": "Deniz Kuvvetleri", "Sakazuki": "Deniz Kuvvetleri", "Borsalino": "Deniz Kuvvetleri", "Kuzan": "Deniz Kuvvetleri", "Issho": "Deniz Kuvvetleri", "Smoker": "Deniz Kuvvetleri", "Tashigi": "Deniz Kuvvetleri", "Koby": "Deniz Kuvvetleri", "Helmeppo": "Deniz Kuvvetleri", "Hina": "Deniz Kuvvetleri", "Tsuru": "Deniz Kuvvetleri", "Sentomaru": "Deniz Kuvvetleri", "Aramaki": "Deniz Kuvvetleri", "Momonga": "Deniz Kuvvetleri", "Axe-Hand Morgan": "Deniz Kuvvetleri", "Bellemere": "Deniz Kuvvetleri", "Rob Lucci": "Dünya Hükümeti (CP)", "Kaku": "Dünya Hükümeti (CP)", "Blueno": "Dünya Hükümeti (CP)", "Kalifa": "Dünya Hükümeti (CP)", "Jabra": "Dünya Hükümeti (CP)", "Spandam": "Dünya Hükümeti (CP)", "Kozuki Oden": "Wano Ülkesi", "Kozuki Momonosuke": "Wano Ülkesi", "Kin'emon": "Wano Ülkesi", "Kikunojo": "Wano Ülkesi", "Kozuki Hiyori": "Wano Ülkesi", "Raizo": "Wano Ülkesi", "Denjiro": "Wano Ülkesi", "Kurozumi Orochi": "Wano Ülkesi", "Kurozumi Kanjuro": "Wano Ülkesi", "Tama": "Wano Ülkesi", "Kozuki Toki": "Wano Ülkesi", "Hyogoro": "Wano Ülkesi", "Ashura Doji": "Wano Ülkesi", "Ryuma": "Wano Ülkesi", "Inuarashi": "Mink Kabilesi", "Nekomamushi": "Mink Kabilesi", "Carrot": "Mink Kabilesi", "Pedro": "Mink Kabilesi", "Vivi": "Alabasta Krallığı", "Nefertari Vivi": "Alabasta Krallığı", "Nefertari Cobra": "Alabasta Krallığı", "Pell": "Alabasta Krallığı", "Chaka": "Alabasta Krallığı", "Vinsmoke Judge": "Germa 66", "Vinsmoke Reiju": "Germa 66", "Vinsmoke Ichiji": "Germa 66", "Vinsmoke Niji": "Germa 66", "Vinsmoke Yonji": "Germa 66", "Arlong": "Arlong Korsanları", "Hatchan": "Arlong Korsanları", "Kuroobi": "Arlong Korsanları", "Chew": "Arlong Korsanları", "Hody Jones": "Balıkadam Adası", "Shirahoshi": "Balıkadam Adası", "Fisher Tiger": "Balıkadam Adası", "King Neptune": "Balıkadam Adası", "Otohime": "Balıkadam Adası", "Vander Decken IX": "Balıkadam Adası", "Hammond": "Balıkadam Adası", "Dorry": "Dev ırkı", "Brogy": "Dev ırkı", "Hajrudin": "Dev ırkı", "Jaguar D. Saul": "Dev ırkı", "Enel": "Skypiea", "Wyper": "Skypiea", "Gan Fall": "Skypiea", "Absalom": "Thriller Bark", "Dr. Hogback": "Thriller Bark", "Perona": "Thriller Bark", "Kuro": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Don Krieg": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Gin": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Alvida": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Bellamy": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Foxy": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Wapol": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Red-Leg Zeff": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Nojiko": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Kaya": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Dr. Hiriluk": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Dr. Kureha": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Caesar Clown": "Punk Hazard", "Monet": "Punk Hazard", "Rebecca": "Dressrosa", "Kyros": "Dressrosa", "Viola": "Dressrosa", "Bartolomeo": "Dressrosa", "Cavendish": "Dressrosa", "Don Chinjao": "Dressrosa", "Dr. Vegapunk": "Egghead / Bilim insanları", "Boa Marigold": "Amazon Lily (Kuja)", "Boa Sandersonia": "Amazon Lily (Kuja)", "Magellan": "Impel Down", "Shakky": "Kuja Korsanları (eski üye)", "Portgas D. Rouge": "Roger Korsanları ile bağlantılı", "Shiki": "Altın Aslan Korsanları"};
     const FEMALE_EXTRA = ["Nami", "Nico Robin", "Boa Hancock", "Charlotte Linlin", "Charlotte Smoothie", "Sugar", "Vivi", "Perona", "Shirahoshi", "Jewelry Bonney", "Carrot", "Kikunojo", "Tashigi", "Hina", "Tsuru", "Kalifa", "Alvida", "Dr. Kureha", "Nojiko", "Bellemere", "Miss Doublefinger", "Miss Goldenweek", "Miss Valentine", "Boa Marigold", "Boa Sandersonia", "Otohime", "Monet", "Rebecca", "Viola", "Baby 5", "Jora", "Charlotte Pudding", "Charlotte Brulee", "Vinsmoke Reiju", "Kozuki Hiyori", "Tama", "Ulti", "Black Maria", "Kozuki Toki", "Koala", "Belo Betty", "Catarina Devon", "Portgas D. Rouge", "Kaya", "Shakky", "Yamato"];
 
     let lobbyChannel = null, gameChannel = null;
@@ -892,6 +908,31 @@
       { id: "sable", name: "Sable" }
     ];
     let selectedAvatar = localStorage.getItem('gla_selected_avatar') || 'luffy';
+    function updateCurrentAvatar() {
+      const img = document.getElementById('avatarCurrentImage');
+      if (img) { img.src = avatarSrc(selectedAvatar); img.alt = (AVATARS.find(a => a.id === selectedAvatar)?.name || 'Korsan') + ' avatarı'; }
+    }
+    function closeAvatarPicker() {
+      const picker = document.getElementById('avatarPicker');
+      if (picker) { picker.hidden = true; picker.classList.remove('avatar-picker-open'); }
+      document.getElementById('avatarCurrentButton')?.setAttribute('aria-expanded','false');
+    }
+    function toggleAvatarPicker() {
+      const picker = document.getElementById('avatarPicker');
+      const btn = document.getElementById('avatarCurrentButton');
+      if (!picker) return;
+      const open = picker.hidden;
+      picker.hidden = !open;
+      picker.classList.toggle('avatar-picker-open', open);
+      if (btn) btn.setAttribute('aria-expanded', String(open));
+    }
+    document.getElementById('avatarCurrentButton')?.addEventListener('click', toggleAvatarPicker);
+    document.addEventListener('click', (event) => {
+      const picker = document.getElementById('avatarPicker');
+      const btn = document.getElementById('avatarCurrentButton');
+      if (picker && !picker.hidden && !picker.contains(event.target) && !btn?.contains(event.target)) closeAvatarPicker();
+    });
+
     function avatarSrc(id) {
       const safe = AVATARS.some(a => a.id === id) ? id : 'luffy';
       return `assets/avatars/${safe}.webp`;
@@ -913,7 +954,10 @@
         button.addEventListener('click', () => {
           selectedAvatar = a.id;
           localStorage.setItem('gla_selected_avatar', selectedAvatar);
+          updateCurrentAvatar();
           renderAvatarPicker();
+    updateCurrentAvatar();
+          closeAvatarPicker();
         });
         grid.appendChild(button);
       });
@@ -921,7 +965,9 @@
     document.getElementById('randomAvatar')?.addEventListener('click', () => {
       selectedAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)].id;
       localStorage.setItem('gla_selected_avatar', selectedAvatar);
+      updateCurrentAvatar();
       renderAvatarPicker();
+      closeAvatarPicker();
     });
     renderAvatarPicker();
 
@@ -1166,56 +1212,260 @@
     // Secret Nakama için ayrı, kategorili ipucu sistemi. Ödüller manga/anime içinde
     // açıklanmış güncel değerlerdir; listede kesin değeri bulunmayan karakterlerde aralık uydurulmaz.
     const SECRET_BOUNTIES = {
-      "Monkey D. Luffy":3000000000,"Roronoa Zoro":1111000000,"Nami":366000000,"Usopp":500000000,"Sanji":1032000000,
-      "Tony Tony Chopper":1000,"Nico Robin":930000000,"Franky":394000000,"Brook":383000000,"Jinbe":1100000000,
-      "Portgas D. Ace":550000000,"Edward Newgate":5046000000,"Marco":1374000000,"Shanks":4048900000,"Benn Beckman":0,
-      "Gol D. Roger":5564800000,"Silvers Rayleigh":0,"Buggy":3189000000,"Dracule Mihawk":3590000000,"Boa Hancock":1659000000,
-      "Trafalgar Law":3000000000,"Eustass Kid":3000000000,"Marshall D. Teach":3996000000,"Kaido":4611100000,
-      "Charlotte Linlin":4388000000,"Charlotte Katakuri":1057000000,"King":1390000000,"Queen":1320000000,"Jack":1000000000,
-      "Nico Robin":930000000,"Crocodile":1965000000,"Doflamingo":340000000,"Donquixote Doflamingo":340000000,
-      "Sabo":602000000,"God Usopp":500000000,"Black Maria":480000000,"Who's-Who":546000000,"Ulti":400000000,
-      "Franky":394000000,"Brook":383000000,"Pedro":382000000,"Nami":366000000,"Capone Bege":350000000,
-      "Scratchmen Apoo":350000000,"Gecko Moria":320000000,"Basil Hawkins":320000000,"Jewelry Bonney":320000000,
-      "Caesar Clown":300000000,"Bartholomew Kuma":296000000,"Arlong":20000000,"Koby":5000000,"Smoker":0
+      "Monkey D. Luffy": 3000000000,
+      "Roronoa Zoro": 1111000000,
+      "Nami": 366000000,
+      "Usopp": 500000000,
+      "Sanji": 1032000000,
+      "Tony Tony Chopper": 1000,
+      "Nico Robin": 930000000,
+      "Franky": 394000000,
+      "Brook": 383000000,
+      "Jinbe": 1100000000,
+      "Portgas D. Ace": 550000000,
+      "Edward Newgate": 5046000000,
+      "Marco": 1374000000,
+      "Shanks": 4048900000,
+      "Gol D. Roger": 5564800000,
+      "Buggy": 3189000000,
+      "Dracule Mihawk": 3590000000,
+      "Boa Hancock": 1659000000,
+      "Trafalgar Law": 3000000000,
+      "Eustass Kid": 3000000000,
+      "Killer": 200000000,
+      "X Drake": 222000000,
+      "Basil Hawkins": 320000000,
+      "Jewelry Bonney": 320000000,
+      "Capone Bege": 350000000,
+      "Scratchmen Apoo": 350000000,
+      "Urouge": 108000000,
+      "Marshall D. Teach": 3996000000,
+      "Van Augur": 64000000,
+      "Doc Q": 72000000,
+      "Kaido": 4611100000,
+      "King": 1390000000,
+      "Queen": 1320000000,
+      "Jack": 1000000000,
+      "Charlotte Linlin": 4388000000,
+      "Charlotte Katakuri": 1057000000,
+      "Charlotte Smoothie": 932000000,
+      "Charlotte Cracker": 860000000,
+      "Charlotte Perospero": 700000000,
+      "Charlotte Oven": 300000000,
+      "Donquixote Doflamingo": 340000000,
+      "Trebol": 99000000,
+      "Diamante": 99000000,
+      "Pica": 99000000,
+      "Crocodile": 1965000000,
+      "Daz Bones": 75000000,
+      "Bentham": 32000000,
+      "Arlong": 20000000,
+      "Bartholomew Kuma": 296000000,
+      "Gecko Moria": 320000000,
+      "Koby": 5000000,
+      "Kuro": 16000000,
+      "Don Krieg": 17000000,
+      "Gin": 12000000,
+      "Hatchan": 8000000,
+      "Kuroobi": 9000000,
+      "Chew": 5500000,
+      "Alvida": 5000000,
+      "Bellamy": 195000000,
+      "Foxy": 24000000,
+      "Galdino": 24000000,
+      "Miss Doublefinger": 35000000,
+      "Miss Goldenweek": 29000000,
+      "Mr. 5": 10000000,
+      "Miss Valentine": 7500000,
+      "Boa Marigold": 40000000,
+      "Boa Sandersonia": 40000000,
+      "Izo": 510000000,
+      "Caesar Clown": 300000000,
+      "Bartolomeo": 200000000,
+      "Cavendish": 330000000,
+      "Pekoms": 330000000,
+      "Pedro": 382000000,
+      "Ulti": 400000000,
+      "Page One": 290000000,
+      "Black Maria": 480000000,
+      "Sasaki": 472000000,
+      "Who's-Who": 546000000,
+      "Dorry": 1800000000,
+      "Brogy": 1800000000,
+      "Bepo": 500,
+      "Don Chinjao": 542000000
     };
     function secretHintCategories(character) {
       const raw = CHARACTER_DATA[character] || [];
       const group = CHAR_GROUP[character] || '';
-      const categories = [];
 
-      // Yalnızca kaynak veride karşılığı olan bilgileri ipucu olarak kullan.
-      let affiliation = '';
-      if (/Deniz Kuvvetleri|Denizci|Amiral|Marine/i.test(group)) affiliation = 'Denizci / Deniz Kuvvetleri';
-      else if (/Dünya Hükümeti|CP/i.test(group)) affiliation = 'Dünya Hükümeti ile bağlantılı';
-      else if (/Devrimci Ordu/i.test(group)) affiliation = 'Devrimci Ordu ile bağlantılı';
-      else if (/Korsan|Mürettebat|En Kötü Nesil|Eski Yedi Büyük Korsan|Baroque Works|Donquixote Ailesi/i.test(group)) affiliation = 'Bir korsan tayfası veya korsan örgütüyle bağlantılı';
-      if (affiliation) categories.push({ key:'affiliation', label:'Tayfa / Bağlantı', value:affiliation });
+      // English labels and current organization names are intentional.
+      const affiliationOverrides = {
+        "Buggy": "Cross Guild",
+        "Dracule Mihawk": "Cross Guild",
+        "Crocodile": "Cross Guild",
+        "Trafalgar Law": "Heart Pirates",
+        "Eustass Kid": "Kid Pirates",
+        "Killer": "Kid Pirates",
+        "X Drake": "SWORD (formerly Beasts Pirates)",
+        "Basil Hawkins": "Hawkins Pirates",
+        "Jewelry Bonney": "Bonney Pirates",
+        "Capone Bege": "Fire Tank Pirates",
+        "Scratchmen Apoo": "On Air Pirates",
+        "Urouge": "Fallen Monk Pirates",
+        "Bartholomew Kuma": "Revolutionary Army (former); Sorbet Kingdom",
+        "Gecko Moria": "Thriller Bark Pirates",
+        "Buggy": "Cross Guild",
+        "Boa Hancock": "Kuja Pirates",
+        "Dracule Mihawk": "Cross Guild",
+        "Donquixote Doflamingo": "Donquixote Pirates",
+        "Trebol": "Donquixote Pirates",
+        "Diamante": "Donquixote Pirates",
+        "Pica": "Donquixote Pirates",
+        "Vergo": "Donquixote Pirates",
+        "Sugar": "Donquixote Pirates",
+        "Baby 5": "Donquixote Pirates",
+        "Buffalo": "Donquixote Pirates",
+        "Dellinger": "Donquixote Pirates",
+        "Lao G": "Donquixote Pirates",
+        "Senor Pink": "Donquixote Pirates",
+        "Gladius": "Donquixote Pirates",
+        "Jora": "Donquixote Pirates",
+        "Machvise": "Donquixote Pirates",
+        "Bartolomeo": "Barto Club",
+        "Cavendish": "Beautiful Pirates",
+        "Rebecca": "Dressrosa Kingdom",
+        "Vivi": "Alabasta Kingdom",
+        "Nefertari Cobra": "Alabasta Kingdom",
+        "Pell": "Alabasta Kingdom",
+        "Kyros": "Dressrosa Kingdom",
+        "Viola": "Dressrosa Kingdom",
+        "Rebecca": "Dressrosa Kingdom",
+        "Bartolomeo": "Barto Club (Straw Hat Grand Fleet)",
+        "Cavendish": "Beautiful Pirates (Straw Hat Grand Fleet)",
+        "Kozuki Oden": "Whitebeard Pirates; formerly Roger Pirates",
+        "Kozuki Momonosuke": "Wano Country",
+        "Kin'emon": "Nine Red Scabbards (Wano Country)",
+        "Kikunojo": "Nine Red Scabbards (Wano Country)",
+        "Inuarashi": "Mokomo Dukedom / Mink Tribe",
+        "Nekomamushi": "Mokomo Dukedom / Mink Tribe",
+        "Carrot": "Mokomo Dukedom / Mink Tribe",
+        "Pedro": "Mokomo Dukedom / Mink Tribe",
+        "Portgas D. Rouge": "No confirmed crew affiliation",
+        "Kaya": "Syrup Village",
+        "Nojiko": "Cocoyasi Village",
+        "Dr. Kureha": "Drum Island",
+        "Dr. Hiriluk": "Drum Island",
+        "Red-Leg Zeff": "Baratie",
+        "Wapol": "Black Drum Kingdom",
+        "Enel": "God of Skypiea (former ruler)",
+        "Fisher Tiger": "Sun Pirates (founder)",
+        "Hody Jones": "New Fish-Man Pirates",
+        "Shirahoshi": "Ryugu Kingdom",
+        "King Neptune": "Ryugu Kingdom",
+        "Otohime": "Ryugu Kingdom",
+        "Vander Decken IX": "Flying Pirates",
+        "Hammond": "New Fish-Man Pirates",
+        "Wyper": "Shandia",
+        "Gan Fall": "Skypiea",
+        "Perona": "Thriller Bark Pirates (former); Cross Guild association",
+        "Absalom": "Thriller Bark Pirates (former); Blackbeard Pirates (former)",
+        "Dr. Hogback": "Thriller Bark Pirates",
+        "Caesar Clown": "Former Donquixote Pirates; Punk Hazard",
+        "Monet": "Donquixote Pirates",
+        "Magellan": "Impel Down",
+        "Hajrudin": "New Giant Warrior Pirates (Straw Hat Grand Fleet)",
+        "Don Chinjao": "Chinjao Family / Happo Navy",
+        "Chaka": "Alabasta Kingdom",
+        "Shanks": "Red Hair Pirates",
+        "Benn Beckman": "Red Hair Pirates",
+        "Yasopp": "Red Hair Pirates",
+        "Lucky Roo": "Red Hair Pirates",
+        "Monkey D. Luffy": "Straw Hat Pirates",
+        "Roronoa Zoro": "Straw Hat Pirates",
+        "Nami": "Straw Hat Pirates",
+        "Usopp": "Straw Hat Pirates",
+        "Sanji": "Straw Hat Pirates",
+        "Tony Tony Chopper": "Straw Hat Pirates",
+        "Nico Robin": "Straw Hat Pirates",
+        "Franky": "Straw Hat Pirates",
+        "Brook": "Straw Hat Pirates",
+        "Jinbe": "Straw Hat Pirates",
+        "Sabo": "Revolutionary Army",
+        "Monkey D. Dragon": "Revolutionary Army",
+        "Emporio Ivankov": "Revolutionary Army",
+        "Koala": "Revolutionary Army",
+        "Hack": "Revolutionary Army",
+        "Morley": "Revolutionary Army",
+        "Belo Betty": "Revolutionary Army"
+      };
+      const groupNames = {
+        "Saman Hasır Korsanları": "Straw Hat Pirates",
+        "Beyaz Sakal Korsanları": "Whitebeard Pirates",
+        "Kızıl Saç Korsanları": "Red Hair Pirates",
+        "Kızıl Saçlı Korsanlar": "Red Hair Pirates",
+        "Roger Korsanları": "Roger Pirates",
+        "Karasakal Korsanları": "Blackbeard Pirates",
+        "Kaido'nun Mürettebatı": "Beasts Pirates",
+        "Big Mom Korsanları": "Big Mom Pirates",
+        "Arlong Korsanları": "Arlong Pirates",
+        "Altın Aslan Korsanları": "Golden Lion Pirates",
+        "Kuja Korsanları (eski üye)": "Kuja Pirates (former member)",
+        "Donquixote Ailesi": "Donquixote Pirates",
+        "Baroque Works": "Baroque Works",
+        "Deniz Kuvvetleri": "Marines",
+        "Dünya Hükümeti (CP)": "Cipher Pol",
+        "Devrimci Ordu": "Revolutionary Army",
+        "Wano Ülkesi": "Wano Country",
+        "Alabasta Krallığı": "Alabasta Kingdom",
+        "Dressrosa": "Dressrosa Kingdom",
+        "Balıkadam Adası": "Fish-Man Island",
+        "Mink Kabilesi": "Mink Tribe",
+        "Amazon Lily (Kuja)": "Kuja Tribe (Amazon Lily)",
+        "Skypiea": "Skypiea",
+        "Thriller Bark": "Thriller Bark",
+        "Punk Hazard": "Punk Hazard",
+        "Germa 66": "Germa 66",
+        "Egghead / Bilim insanları": "Egghead / Scientists",
+        "Dev ırkı": "Giants",
+        "En Kötü Nesil": "Worst Generation",
+        "Eski Yedi Büyük Korsan": "Former Seven Warlords of the Sea",
+        "İlk sagalar (Doğu Mavi / Grand Line başı)": "East Blue / early Grand Line",
+        "Impel Down": "Impel Down",
+        "Roger Korsanları ile bağlantılı": "Roger Pirates connection"
+      };
 
+      const affiliation = affiliationOverrides[character] || groupNames[group] || group || "Unknown";
       const bounty = SECRET_BOUNTIES[character];
+      let bountyHint = "No confirmed bounty listed in the current dataset";
       if (Number.isFinite(bounty)) {
-        const bountyHint = bounty < 500000000 ? '0–500 milyon Berry' : bounty < 1000000000 ? '500 milyon–1 milyar Berry' : '1 milyar Berry veya üzeri';
-        categories.push({ key:'bounty', label:'Ödül', value:bountyHint });
+        bountyHint = bounty < 500000000 ? "0–500 million Berries"
+          : bounty < 1000000000 ? "500 million–1 billion Berries"
+          : "1 billion Berries or more";
       }
 
-      const fruit = raw.some(x => /Devil Fruit kullanıcısı|Meyve kullanıcısı|Şeytan Meyvesi kullanıcısı/i.test(x));
-      const noFruit = raw.some(x => /Devil Fruit yok|Şeytan Meyvesi yok/i.test(x));
-      const haki = raw.some(x => /Haki kullanabiliyor|Haki kullanıcısı/i.test(x));
-      // Meyve + Haki tek bir kategori sayılır. İkisinden biri bilinmiyorsa
-      // eksik bilgiyle ipucu üretme; diğer bilinen kategorilerden seçim yapılsın.
-      if ((fruit || noFruit) && haki) {
-        categories.push({ key:'ability', label:'Meyve / Haki', value: fruit ? 'Şeytan Meyvesi var; Haki kullanabiliyor' : 'Şeytan Meyvesi yok; Haki kullanabiliyor' });
-      }
+      const fruit = raw.some(x => /Devil Fruit user|Devil Fruit kullanıcısı|Meyve kullanıcısı|Şeytan Meyvesi kullanıcısı/i.test(x));
+      const noFruit = raw.some(x => /No Devil Fruit|Devil Fruit yok|Şeytan Meyvesi yok/i.test(x));
+      const haki = raw.some(x => /can use Haki|Haki kullanabiliyor|Haki user|Haki kullanıcısı/i.test(x));
+      let abilityHint = "No confirmed Devil Fruit / Haki data in the current dataset";
+      if (fruit && haki) abilityHint = "Devil Fruit user; Haki confirmed";
+      else if (fruit && noFruit) abilityHint = "Conflicting Devil Fruit data";
+      else if (fruit) abilityHint = "Devil Fruit user; Haki status unknown";
+      else if (noFruit && haki) abilityHint = "No Devil Fruit; Haki confirmed";
+      else if (noFruit) abilityHint = "No Devil Fruit; Haki status unknown";
+      else if (haki) abilityHint = "Haki confirmed; Devil Fruit status unknown";
 
-      return categories;
+      return [
+        { key: "affiliation", label: "Crew / Organization", value: affiliation },
+        { key: "bounty", label: "Bounty", value: bountyHint },
+        { key: "ability", label: "Devil Fruit / Haki", value: abilityHint }
+      ];
     }
     function buildHints(character) {
       // Diğer modların eski ipucu davranışı aynen korunur.
       if (mode === 'secret') {
+        // Every character has all three categories; exactly one is selected at random per round.
         const categories = auShuffle(secretHintCategories(character));
-        // Bilinmeyen ödül/Haki verisi ipucu olarak gösterilmez. Bunun yerine
-        // karakter için doğrulanabilir başka kategori(ler) seçilir.
-        // Secret Nakama'da yalnızca TEK kategori gösterilir. Meyve + Haki
-        // birleşimi yukarıda tek kategori olarak tanımlıdır.
         return categories.slice(0, 1).map(c => `${c.label}: ${c.value}`);
       }
       const raw = CHARACTER_DATA[character] || [];
