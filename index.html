@@ -351,21 +351,23 @@
     .den-score-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 11px; border-radius:8px; background:rgba(4,11,20,.5); margin:6px 0; }
     .den-podium { display:flex; align-items:flex-end; justify-content:center; gap:10px; margin:22px 0 18px; padding:14px 8px 0; }
     .den-podium-place { flex:1; max-width:220px; text-align:center; min-width:0; }
-    .den-podium-place .podium-name { font-weight:900; overflow-wrap:anywhere; margin:0 0 8px; }
+    .den-podium-place .podium-name { font-family:'Pirata One',cursive; font-size:clamp(1.4rem,4vw,2.3rem); font-weight:900; color:var(--straw); overflow-wrap:anywhere; line-height:1.05; margin:0 0 8px; }
     .den-podium-step { border:2px solid #9b7137; border-radius:10px 10px 0 0; background:linear-gradient(180deg,#f5d99a,#a66d27); color:#241609; font-family:'Pirata One',cursive; font-size:clamp(1.4rem,4vw,2.3rem); display:flex; justify-content:center; align-items:center; }
     .den-podium-place.first .den-podium-step { height:130px; }
     .den-podium-place.second .den-podium-step { height:94px; }
     .den-podium-place.third .den-podium-step { height:66px; }
-    .wanted-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin:16px 0; }
-    .wanted-card { position:relative; width:100%; max-width:300px; aspect-ratio:1024/1280; margin:auto; background:url('assets/wanted-poster-template.png') center/100% 100% no-repeat; color:#251707; filter:drop-shadow(0 8px 10px #0008); }
-    .wanted-nick { position:absolute; left:13%; right:13%; top:69%; text-align:center; font-family:'Pirata One',serif; font-size:clamp(1rem,3.2vw,1.65rem); font-weight:900; line-height:1.05; overflow-wrap:anywhere; }
-    .wanted-berry { position:absolute; left:10%; right:10%; top:79%; text-align:center; font-family:'Pirata One',serif; font-size:clamp(1.15rem,3.8vw,2rem); font-weight:900; white-space:nowrap; }
-    .wanted-place { position:absolute; top:4%; right:7%; font-weight:900; font-size:1rem; transform:rotate(8deg); color:#7d2118; }
     .den-score-row .pts { color:#f4d38a; }
 
     .den-score-row .pts { color:var(--straw); font-weight:900; white-space:nowrap; }
     .den-feedback { min-height:26px; color:var(--straw); font-weight:700; margin:8px 0; }
     .den-guess-form { display:flex; gap:8px; margin-top:12px; }
+    .den-guess-autocomplete { position:relative; flex:1; min-width:0; }
+    .den-guess-autocomplete input { width:100%; }
+    .den-character-suggestions { display:none; position:absolute; z-index:100; top:calc(100% + 4px); left:0; right:0; max-height:240px; overflow-y:auto; border:1px solid var(--straw-dark); border-radius:10px; background:#07111f; box-shadow:0 12px 28px rgba(0,0,0,.55); }
+    .den-character-suggestions.open { display:block; }
+    .den-character-suggestions button { display:block; width:100%; margin:0; padding:10px 12px; text-align:left; border:0; border-bottom:1px solid rgba(245,197,66,.12); border-radius:0; background:transparent; color:var(--text); }
+    .den-character-suggestions button:hover,.den-character-suggestions button:focus { background:rgba(245,197,66,.14); color:var(--straw); }
+    .den-character-suggestions .no-match { padding:10px 12px; color:var(--muted); font-size:.9rem; }
     .den-draw-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0; }
     .den-draw-toolbar button { width:auto; margin:0; }
     .den-draw-tools { display:flex; gap:7px; align-items:center; }
@@ -973,11 +975,45 @@
         .on('broadcast', { event: 'au_state' }, ({ payload }) => { if (isHost || !isHostSender(payload) || !payload.AS) return; AS = payload.AS; auRender(); })
         .on('broadcast', { event: 'au_act' }, ({ payload }) => { if (isHost && AS) { const p = AS.ids.indexOf(payload.from); if (p >= 0) auApply(p, payload.a); } })
         .on('broadcast', { event: 'au_need' }, () => { if (isHost && AS) auPush(); })
-        .on('broadcast', { event: 'bounty_state' }, ({ payload }) => { if (isHost || !isHostSender(payload) || !payload.state) return; B = payload.state; bountyRender(); })
+        .on('broadcast', { event: 'bounty_state' }, ({ payload }) => { if (isHost || !isHostSender(payload) || !payload.state) return; const view=document.getElementById('bountyView'); const active=document.activeElement; const editing=!!view && view.contains(active) && active && /^(INPUT|TEXTAREA)$/.test(active.tagName) && B?.phase===payload.state.phase; B = payload.state; if (!editing) bountyRender(); })
         .on('broadcast', { event: 'bounty_private' }, ({ payload }) => { if (payload.targetId === myId) { if (payload.character) myBountyCharacter = payload.character; if (payload.guessMessage) myBountyGuessMessage = payload.guessMessage; bountyRender(); } })
         .on('broadcast', { event: 'bounty_action' }, ({ payload }) => { if (isHost && B && payload?.action) bountyApply(payload.from, payload.action); })
-        .on('broadcast', { event: 'den_state' }, ({ payload }) => { if (isHost || !isHostSender(payload) || !payload.state) return; const previous = D; D = payload.state; denDuration = Number(D.duration) || denDuration; denStyle = D.style || denStyle; const emojiClockOnly = D.style === 'emoji' && previous && previous.style === 'emoji' && previous.phase === D.phase && previous.emojiActiveIndex === D.emojiActiveIndex && JSON.stringify(previous.emojiSlots || []) === JSON.stringify(D.emojiSlots || []) && previous.remaining !== D.remaining; if (emojiClockOnly) denUpdateClock(); else denRender(); })
-        .on('broadcast', { event: 'den_private' }, ({ payload }) => { if (payload?.targetId !== myId) return; if (payload.character) myDenCharacter = payload.character; if (Array.isArray(payload.taboo)) myDenTaboo = payload.taboo; if (payload.message) { denFeedback = payload.message; if (payload.cooldown) denLocalCooldownUntil = Date.now() + payload.cooldown; } denRender(); })
+        .on('broadcast', { event: 'den_state' }, ({ payload }) => {
+          if (isHost || !isHostSender(payload) || !payload.state) return;
+          const previous = D, incoming = payload.state;
+          denDuration = Number(incoming.duration) || denDuration; denStyle = incoming.style || denStyle;
+          const activeGuess = document.getElementById('denGuessInput');
+          const typingInGuess = !!activeGuess && document.activeElement === activeGuess && previous?.phase === 'playing' && incoming.phase === 'playing' && !(incoming.solved || []).includes(myId);
+          const clockOnly = !!previous && previous.phase === incoming.phase && (() => { const a={...previous}; const b={...incoming}; delete a.remaining; delete b.remaining; return JSON.stringify(a) === JSON.stringify(b) && previous.remaining !== incoming.remaining; })();
+          D = incoming;
+          // Never replace the guess input while the player is typing: state broadcasts arrive
+          // every second and replacing the DOM steals focus before the next keystroke.
+          if (typingInGuess || clockOnly) denUpdateClock(); else denRender();
+        })
+        .on('broadcast', { event: 'den_private' }, ({ payload }) => {
+          if (payload?.targetId !== myId) return;
+          if (payload.character) myDenCharacter = payload.character;
+          if (Array.isArray(payload.taboo)) myDenTaboo = payload.taboo;
+          if (payload.message) {
+            denFeedback = payload.message;
+            if (payload.cooldown) denLocalCooldownUntil = Date.now() + payload.cooldown;
+          }
+          // Private feedback must not rebuild the whole game screen either.
+          const feedback = document.getElementById('denFeedback');
+          if (feedback && payload.message) feedback.textContent = payload.message;
+          const field = document.getElementById('denGuessInput'), button = document.getElementById('denGuessBtn');
+          if (payload.cooldown) {
+            if (field) field.disabled = true;
+            if (button) button.disabled = true;
+            setTimeout(() => {
+              if (Date.now() < denLocalCooldownUntil) return;
+              const currentField = document.getElementById('denGuessInput'), currentButton = document.getElementById('denGuessBtn');
+              if (currentField && D?.phase === 'playing' && !(D.solved || []).includes(myId)) currentField.disabled = false;
+              if (currentButton && D?.phase === 'playing' && !(D.solved || []).includes(myId)) currentButton.disabled = false;
+            }, Math.max(0, Number(payload.cooldown) || 0));
+          }
+          if (payload.character || Array.isArray(payload.taboo)) denRender();
+        })
         .on('broadcast', { event: 'den_action' }, ({ payload }) => { if (isHost && D && payload?.action) denApply(payload.from, payload.action); })
         .on('broadcast', { event: 'den_draw_line' }, ({ payload }) => { if (payload?.roomCode === roomCode && !isHost && payload.line) { D?.drawStrokes?.push(payload.line); denDrawSegment(payload.line, false); } })
         .on('broadcast', { event: 'den_draw_clear' }, ({ payload }) => { if (payload?.roomCode === roomCode) { if(!isHost && D) D.drawStrokes=[]; denClearCanvas(false); } })
@@ -1448,6 +1484,10 @@
       }
       h+='</div><aside class="bounty-sidebar"><div class="lobby-section"><div class="section-title">📜 Av Günlüğü · '+B.history.length+' olay</div><p class="small">En yeni olaylar üstte. Geçmişi kaydırarak baştan sona inceleyebilirsin.</p><div class="bounty-log">'+(B.history.length?B.history.map((x,i)=>`<div class="bounty-log-item"><span class="log-num">#${B.history.length-i}</span>${esc(x)}</div>`).join(''):'<div class="bounty-log-item">İlk soru henüz sorulmadı.</div>')+'</div></div></aside></div>';
       view.innerHTML=h; hydrateImgs(view);
+      if (!view.dataset.focusSafeBound) {
+        view.dataset.focusSafeBound = '1';
+        view.addEventListener('focusout', () => setTimeout(() => { if (B && gameState === 'bounty' && !view.contains(document.activeElement)) bountyRender(); }, 120));
+      }
       const g=id=>document.getElementById(id);
       if(g('bountyLeave')) g('bountyLeave').onclick=()=>g('btnLeave').onclick();
       if(g('bountyAsk')) g('bountyAsk').onclick=()=>{const q=g('bountyQuestion').value.trim();if(q.length<4){alert('Biraz daha açık bir soru yaz.');return;}bountyAct({t:'ask',question:q});};
@@ -1804,6 +1844,8 @@
       const previousGuessField = document.getElementById("denGuessInput");
       const previousGuessValue = previousGuessField ? previousGuessField.value : "";
       const guessHadFocus = previousGuessField && document.activeElement === previousGuessField;
+      const previousGuessStart = previousGuessField?.selectionStart ?? previousGuessValue.length;
+      const previousGuessEnd = previousGuessField?.selectionEnd ?? previousGuessValue.length;
       gameState = 'den'; show('den');
       const me = myId, narrator = D.narratorId === me, playing = D.phase === 'playing';
       const esc = auEsc, view = document.getElementById('denView');
@@ -1856,7 +1898,7 @@
           h += `<div class="section-title">🧩 Emoji kütüphanesi · ${chosenCount}/${DEN_EMOJI_SLOTS}</div><p class="small">Seçtiğin her emoji bir sonraki boş kutuya yerleşir. 5 emoji tamamlanınca tur otomatik başlar.</p><div class="den-emoji-library">${DEN_EMOJI_LIBRARY.map(e=>`<button type="button" class="den-emoji-pick secondary" data-den-emoji="${e}" ${chosenCount>=DEN_EMOJI_SLOTS?'disabled':''} aria-label="Emoji ${e}">${e}</button>`).join('')}</div>`;
         }
       }
-      if (playing && !narrator && !D.solved.includes(me)) h += `<form id="denGuessForm" class="den-guess-form"><input id="denGuessInput" placeholder="Karakter tahminin…" maxlength="80" autocomplete="off" ${Date.now()<denLocalCooldownUntil?'disabled':''}><button id="denGuessBtn" type="submit" ${Date.now()<denLocalCooldownUntil?'disabled':''}>Tahmin Et</button></form><div id="denFeedback" class="den-feedback">${esc(denFeedback)}</div>`;
+      if (playing && !narrator && !D.solved.includes(me)) h += `<form id="denGuessForm" class="den-guess-form"><div class="den-guess-autocomplete"><input id="denGuessInput" placeholder="Karakter adını yaz…" maxlength="80" autocomplete="off" aria-autocomplete="list" aria-controls="denCharacterSuggestions" ${Date.now()<denLocalCooldownUntil?'disabled':''}><div id="denCharacterSuggestions" class="den-character-suggestions" role="listbox"></div></div><button id="denGuessBtn" type="submit" ${Date.now()<denLocalCooldownUntil?'disabled':''}>Tahmin Et</button></form><div id="denFeedback" class="den-feedback">${esc(denFeedback)}</div>`;
       else if (playing && !narrator && D.solved.includes(me)) h += `<div class="result-box win">✓ Doğru bildin! ${D.style==='emoji'?'Emoji turunun tamamlanması bekleniyor.':D.style==='draw'?'Çizim turu tamamlanıyor.':'Diğer oyuncuların tahminleri bekleniyor.'}</div>`;
       else if (narrator && playing && D.style !== 'emoji') h += `<div class="den-feedback">Diğer oyuncular tahmin ediyor. Cevabı söyleme!</div>`;
       if (D.phase === 'vote' && D.style === 'voice') {
@@ -1867,8 +1909,7 @@
         const ranking = D.ids.slice().sort((a,b)=>(Number(D.scores[b])||0)-(Number(D.scores[a])||0));
         const podium = ranking.slice(0,3);
         h += `<div class="result-box win" style="margin-top:12px"><h2 style="font-family:'Pirata One',cursive;font-size:2rem">🏴‍☠️ Grand Line Bounty Sıralaması</h2><p class="small">Herkes ${D.roundsPerPlayer || 3} kez anlatıcı oldu. Toplam ${D.totalRounds || D.ids.length*(D.roundsPerPlayer||3)} tur tamamlandı.</p></div>`;
-        if (podium.length) h += `<div class="den-podium">${[1,0,2].filter(i=>podium[i]).map(i=>{const id=podium[i], place=i===0?'first':i===1?'second':'third';return `<div class="den-podium-place ${place}"><div class="podium-name">${esc(D.names[id]||'Korsan')}</div><div class="den-podium-step">${i+1}.<br>฿${((Number(D.scores[id])||0)*1000).toLocaleString('en-US')}</div></div>`}).join('')}</div>`;
-        h += `<div class="wanted-grid">${ranking.map((id,i)=>`<div class="wanted-card"><div class="wanted-place">#${i+1}</div><div class="wanted-nick">${esc(D.names[id]||'Korsan')}</div><div class="wanted-berry">฿ ${((Number(D.scores[id])||0)*1000).toLocaleString('en-US')}</div></div>`).join('')}</div>`;
+        if (podium.length) h += `<div class="den-podium">${[1,0,2].filter(i=>podium[i]).map(i=>{const id=podium[i], place=i===0?'first':i===1?'second':'third';return `<div class="den-podium-place ${place}"><div class="podium-name">${i+1}. ${esc(D.names[id]||'Korsan')}</div><div class="den-podium-step">฿${((Number(D.scores[id])||0)*1000).toLocaleString('en-US')}</div></div>`}).join('')}</div>`;
         if (isHost) h += `<button id="denRestart" class="success">🔁 Yeni oyun başlat</button>`;
       }
       if (D.phase === 'reveal') h += `<div class="result-box ${D.correctOrder.length?'win':'lose'}" style="margin-top:12px"><b>Tur tamamlandı!</b><div style="font-size:1.4rem;color:var(--straw);margin:8px 0">${esc(D.answer || (isHost ? D.character : 'Bilinmeyen karakter'))}</div><div class="small">Doğru bilen: ${D.correctOrder.length ? D.correctOrder.map((id,i)=>`${i+1}. ${esc(D.names[id])}`).join(' · ') : 'Kimse bilemedi.'}</div><div class="small" style="margin-top:8px">${D.style!=='voice' ? `${D.style==='draw'?'Çizim':'Emoji'} turu tamamlandı. Anlatıcı +${D.correctOrder.length * D.ids.length * (Number(D.narratorMultiplier)||6)} puan aldı (${D.ids.length} oyuncu × ${D.narratorMultiplier} × ${D.correctOrder.length}).` : D.violationPassed ? `🚫 Yasaklı kelime oylaması kabul edildi (${(D.violationVotes||[]).length}/${D.ids.length-1}). Anlatıcı bu tur puan alamadı.` : `Yasaklı kelime oylaması kabul edilmedi. Anlatıcı +${D.correctOrder.length * D.ids.length * (Number(D.narratorMultiplier)||6)} puan aldı (${D.ids.length} oyuncu × ${D.narratorMultiplier} × ${D.correctOrder.length}).`}</div>${isHost?`<button id="denNext" class="success" style="margin-top:12px">${D.round >= (D.totalRounds || D.ids.length*(D.roundsPerPlayer||3))?'🏆 Sonuçları Göster':'Sonraki Tur'}</button>`:'<p class="small" style="margin-top:10px">Kaptan sonraki turu başlatacak.</p>'}</div>`;
@@ -1876,9 +1917,27 @@
       if (D.log?.length) h += `<div class="lobby-section"><div class="section-title">📜 Tur günlüğü</div>${D.log.slice(0,8).map(line=>`<div class="small" style="padding:5px 0">${esc(line)}</div>`).join('')}</div>`;
       view.innerHTML = h;
       const restoredGuessField = document.getElementById("denGuessInput");
-      if (restoredGuessField && previousGuessValue) { restoredGuessField.value = previousGuessValue; if (guessHadFocus) restoredGuessField.focus({ preventScroll: true }); }
+      if (restoredGuessField && previousGuessField) { restoredGuessField.value = previousGuessValue; if (guessHadFocus) { restoredGuessField.focus({ preventScroll: true }); try { restoredGuessField.setSelectionRange(previousGuessStart, previousGuessEnd); } catch (_) {} } }
       const leave = document.getElementById('denLeave'); if (leave) leave.onclick = () => document.getElementById('btnLeave').onclick();
-      const form = document.getElementById('denGuessForm'); if (form) form.onsubmit = e => { e.preventDefault(); const field=document.getElementById('denGuessInput'); const guess=field?.value.trim()||''; if(!guess) return; denAct({t:'guess',guess}); denFeedback='Tahminin kontrol ediliyor…'; if(field) field.value=''; const btn=document.getElementById('denGuessBtn'); if(btn) btn.disabled=true; if(field) field.disabled=true; };
+      const form = document.getElementById('denGuessForm');
+      const guessField = document.getElementById('denGuessInput');
+      const suggestions = document.getElementById('denCharacterSuggestions');
+      const updateCharacterSuggestions = () => {
+        if (!guessField || !suggestions) return;
+        const query = guessField.value.trim().toLocaleLowerCase('tr-TR');
+        if (query.length < 2) { suggestions.innerHTML = ''; suggestions.classList.remove('open'); return; }
+        const matches = CHARACTERS.filter(name => name.toLocaleLowerCase('tr-TR').includes(query)).slice(0, 12);
+        suggestions.innerHTML = matches.length ? matches.map(name => `<button type="button" role="option" data-den-character="${esc(name)}">${esc(name)}</button>`).join('') : '<div class="no-match">Eşleşen karakter bulunamadı.</div>';
+        suggestions.classList.add('open');
+      };
+      if (guessField && suggestions) {
+        guessField.addEventListener('input', updateCharacterSuggestions);
+        guessField.addEventListener('focus', updateCharacterSuggestions);
+        guessField.addEventListener('keydown', e => { if (e.key === 'Escape') suggestions.classList.remove('open'); });
+        suggestions.addEventListener('mousedown', e => { const option=e.target.closest('[data-den-character]'); if (!option) return; e.preventDefault(); guessField.value=option.dataset.denCharacter||''; suggestions.classList.remove('open'); guessField.focus({preventScroll:true}); });
+        updateCharacterSuggestions();
+      }
+      if (form) form.onsubmit = e => { e.preventDefault(); const field=document.getElementById('denGuessInput'); const guess=field?.value.trim()||''; if(!guess) return; denAct({t:'guess',guess}); denFeedback='Tahminin kontrol ediliyor…'; if(field) field.value=''; if(suggestions) { suggestions.innerHTML=''; suggestions.classList.remove('open'); } const btn=document.getElementById('denGuessBtn'); if(btn) btn.disabled=true; if(field) field.disabled=true; };
       const next = document.getElementById('denNext'); if (next) next.onclick = () => denAct({t:'next'});
       const restart = document.getElementById('denRestart'); if (restart) restart.onclick = () => { if (isHost) denStart(); };
       const voteYes = document.getElementById('denViolationYes'); if (voteYes) voteYes.onclick = () => denAct({t:'violation_vote', used:true});
