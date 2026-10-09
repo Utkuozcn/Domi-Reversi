@@ -22,7 +22,7 @@
 
     body {
       font-family: 'Roboto', system-ui, sans-serif;
-      background: #0a1628;
+      background: #0a1628 url('onepiece-collage.png') center center / cover no-repeat fixed;
       color: var(--text);
       min-height: 100vh;
       display: flex;
@@ -34,12 +34,16 @@
     body.lobby-mode {
       background: url('onepiece-bg.png') center center / cover no-repeat fixed;
     }
-    body.lobby-mode::before {
+    body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background: linear-gradient(to bottom, rgba(10,22,40,0.5) 0%, rgba(10,22,40,0.78) 100%);
+      background: linear-gradient(to bottom, rgba(10,22,40,0.55) 0%, rgba(10,22,40,0.82) 100%);
       z-index: 0;
+      pointer-events: none;
+    }
+    body.lobby-mode::before {
+      background: linear-gradient(to bottom, rgba(10,22,40,0.5) 0%, rgba(10,22,40,0.78) 100%);
     }
 
     .container {
@@ -357,27 +361,88 @@
     const SUPABASE_KEY = 'sb_publishable_2Y60SRvr2Q2_Bb7Sa1gaVw_b0PM6o-J';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const CHARACTERS = [
-      "Monkey D. Luffy","Roronoa Zoro","Nami","Usopp","Sanji","Tony Tony Chopper","Nico Robin","Franky","Brook","Jinbe",
-      "Portgas D. Ace","Sabo","Shanks","Buggy","Dracule Mihawk","Boa Hancock","Trafalgar Law","Eustass Kid","Killer","X Drake",
-      "Basil Hawkins","Jewelry Bonney","Capone Bege","Scratchmen Apoo","Urouge","Marshall D. Teach","Shiryu","Jesus Burgess",
-      "Edward Newgate","Marco","Vista","Jozu","Kaido","King","Queen","Jack","Yamato",
-      "Charlotte Linlin","Charlotte Katakuri","Charlotte Smoothie","Charlotte Cracker","Charlotte Perospero",
-      "Donquixote Doflamingo","Trebol","Diamante","Pica","Vergo","Sugar","Crocodile","Daz Bones","Bentham",
-      "Monkey D. Garp","Sengoku","Sakazuki","Borsalino","Kuzan","Issho","Rob Lucci","Kaku",
-      "Silvers Rayleigh","Gol D. Roger","Kozuki Oden","Kozuki Momonosuke","Kin'emon","Kikunojo",
-      "Inuarashi","Nekomamushi","Carrot","Vivi","Enel","Arlong","Bartholomew Kuma","Gecko Moria","Perona",
-      "Hody Jones","Shirahoshi","Fisher Tiger"
-    ];
+    // Her karakter için sadece 2 çok genel bilgi
+    const CHARACTER_DATA = {
+      "Monkey D. Luffy": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Roronoa Zoro": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Nami": ["Kadın karakter", "Ödülü var"],
+      "Usopp": ["Ödülü var", "Devil Fruit yok"],
+      "Sanji": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Tony Tony Chopper": ["Devil Fruit kullanıcısı", "Zoan tipi"],
+      "Nico Robin": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Franky": ["Ödülü var", "Devil Fruit yok"],
+      "Brook": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Jinbe": ["Haki kullanabiliyor", "Balıkadam"],
+      "Portgas D. Ace": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Sabo": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Shanks": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Buggy": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Dracule Mihawk": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Boa Hancock": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Trafalgar Law": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Eustass Kid": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Killer": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "X Drake": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Basil Hawkins": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Jewelry Bonney": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Capone Bege": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Scratchmen Apoo": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Urouge": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Marshall D. Teach": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Shiryu": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Jesus Burgess": ["Haki kullanabiliyor", "Ödülü var"],
+      "Edward Newgate": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Marco": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Vista": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Jozu": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Kaido": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "King": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Queen": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Jack": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Yamato": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Charlotte Linlin": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Charlotte Katakuri": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Charlotte Smoothie": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Charlotte Cracker": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Charlotte Perospero": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Donquixote Doflamingo": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Trebol": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Diamante": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Pica": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Vergo": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Sugar": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Crocodile": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Daz Bones": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Bentham": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Monkey D. Garp": ["Haki kullanabiliyor", "Denizci"],
+      "Sengoku": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Sakazuki": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Borsalino": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Kuzan": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Issho": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Rob Lucci": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Kaku": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Silvers Rayleigh": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Gol D. Roger": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Kozuki Oden": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Kozuki Momonosuke": ["Devil Fruit kullanıcısı", "Wano ile bağlantılı"],
+      "Kin'emon": ["Devil Fruit kullanıcısı", "Wano ile bağlantılı"],
+      "Kikunojo": ["Haki kullanabiliyor", "Kadın karakter"],
+      "Inuarashi": ["Haki kullanabiliyor", "Wano ile bağlantılı"],
+      "Nekomamushi": ["Haki kullanabiliyor", "Wano ile bağlantılı"],
+      "Carrot": ["Kadın karakter", "Devil Fruit yok"],
+      "Vivi": ["Kadın karakter", "Devil Fruit yok"],
+      "Enel": ["Devil Fruit kullanıcısı", "Logia tipi"],
+      "Arlong": ["Balıkadam", "Devil Fruit yok"],
+      "Bartholomew Kuma": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Gecko Moria": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Perona": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Hody Jones": ["Balıkadam", "Devil Fruit yok"],
+      "Shirahoshi": ["Kadın karakter", "Balıkadam"],
+      "Fisher Tiger": ["Balıkadam", "Devil Fruit yok"]
+    };
 
-    const GENERAL_INFOS = [
-      "Devil Fruit kullanıcısı","Haki kullanabiliyor","Ödülü var (bounty sahibi)",
-      "Erkek ve kılıç kullanıyor","Kadın karakter","Denizci (Marine)","Korsan (Pirate)",
-      "Hasır Şapka ile bağlantılı","Yonko veya eski Yonko mürettebatı","Shichibukai / eski Warlord",
-      "Supernova / Worst Generation","Wano ile bağlantılı","Balıkadam veya deniz ırkı",
-      "Devil Fruit yok","Logia tipi Devil Fruit","Paramecia tipi Devil Fruit","Zoan tipi Devil Fruit",
-      "Amiral veya eski amiral","Devrimci Ordu üyesi"
-    ];
+    const CHARACTERS = Object.keys(CHARACTER_DATA);
 
     let lobbyChannel = null, gameChannel = null;
     let myId = crypto.randomUUID(), myName = '', roomCode = '', isHost = false;
@@ -615,7 +680,8 @@
       if (ids.length < 3 || ids.length > 8) return;
       const character = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
       const spyIdChosen = ids[Math.floor(Math.random() * ids.length)];
-      const generalInfo = GENERAL_INFOS[Math.floor(Math.random() * GENERAL_INFOS.length)];
+      const infos = CHARACTER_DATA[character];
+      const generalInfo = infos[Math.floor(Math.random() * infos.length)];
       broadcast('game_start', { character, spyId: spyIdChosen, generalInfo });
     };
     document.getElementById('btnVoteStart').onclick = () => {
