@@ -399,14 +399,16 @@
     .bounty-step .num { flex:none; width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:rgba(245,197,66,.14);color:var(--straw);font-weight:800; }
     .bounty-player { position:relative; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; border-radius:10px; background:rgba(4,11,20,.52); border:1px solid #293c4f; margin:9px 0; font-size:1rem; line-height:1.5; }
     .bounty-hover-history { display:none; position:absolute; z-index:50; left:8px; right:8px; top:calc(100% - 2px); max-height: min(48vh, 420px); overflow:auto; padding:16px; border:2px solid var(--straw-dark); border-radius:12px; background:rgba(5,12,22,.99); box-shadow:0 12px 30px rgba(0,0,0,.65); color:#e6edf4; font-size:1rem; line-height:1.6; }
-    .bounty-player:hover, .bounty-player:focus-within { z-index:20; }
-    .bounty-player:hover .bounty-hover-history, .bounty-player:focus-within .bounty-hover-history { display:block; }
+    .bounty-player.history-open { z-index:20; }
+    .bounty-player.history-open .bounty-hover-history { display:block; }
     .bounty-hover-history > strong { display:block; font-size:1.08rem; line-height:1.45; margin-bottom:8px; color:var(--straw); }
     .bounty-hover-history .qa-entry { padding:11px 0; border-bottom:1px solid rgba(137,163,185,.22); line-height:1.6; }
     .bounty-hover-history .qa-entry:last-child { border-bottom:0; }
     .bounty-hover-history .qa-question { color:var(--straw); font-weight:800; font-size:1rem; overflow-wrap:anywhere; }
     .bounty-hover-history .qa-answer { margin-top:5px; font-size:1rem; }
-    .bounty-player { cursor:help; }
+    .bounty-player { cursor:default; }
+    .bounty-history-trigger { cursor:pointer; text-decoration:underline dotted rgba(245,197,66,.65); text-underline-offset:3px; }
+    .bounty-history-trigger:focus-visible { outline:2px solid var(--straw); outline-offset:3px; border-radius:3px; }
     .bounty-player.found { border-color:rgba(62,207,106,.55); background:rgba(46,160,80,.09); }
     .bounty-tag { font-size:.85rem; line-height:1.35; border-radius:999px; padding:5px 10px; color:#d7e3eb; background:rgba(122,144,163,.16); }
     .bounty-tag.found { color:#9ef0b2; background:rgba(62,207,106,.13); }
@@ -445,6 +447,43 @@
       .bounty-layout.log-collapsed .bounty-sidebar { display:none; }
       .bounty-log { max-height:340px; }
       .bounty-log-toggle { right:-9px; top:50%; width:28px; height:44px; }
+    }
+
+    /* Av Günlüğü: oyun alanının üstüne açılan bağımsız overlay sekmesi */
+    .bounty-layout { display:block !important; position:relative; }
+    .bounty-main { width:100%; min-width:0; }
+    .bounty-sidebar {
+      position:fixed !important;
+      top:50% !important;
+      right:12px !important;
+      transform:translateY(-50%);
+      width:min(360px, calc(100vw - 56px));
+      max-height:min(78vh, 720px);
+      overflow-y:auto;
+      padding:12px 14px;
+      border:1px solid rgba(245,197,66,.42);
+      border-radius:16px;
+      background:linear-gradient(145deg, rgba(16,24,36,.98), rgba(5,9,17,.98));
+      box-shadow:0 14px 42px rgba(0,0,0,.72);
+      z-index:1000;
+    }
+    .bounty-layout.log-collapsed .bounty-sidebar { display:none !important; }
+    .bounty-log-toggle {
+      position:fixed !important;
+      top:50% !important;
+      right:8px !important;
+      transform:translateY(-50%);
+      z-index:1001;
+    }
+    .bounty-layout:not(.log-collapsed) .bounty-log-toggle {
+      right:calc(min(360px, 100vw - 56px) + 18px) !important;
+    }
+    .bounty-sidebar .lobby-section { margin-top:0; padding-top:0; border-top:0; }
+    .bounty-sidebar .bounty-log { max-height:calc(78vh - 130px); }
+    @media(max-width:760px) {
+      .bounty-layout,.bounty-layout.log-collapsed { display:block !important; }
+      .bounty-sidebar { width:calc(100vw - 56px); right:10px !important; }
+      .bounty-layout:not(.log-collapsed) .bounty-log-toggle { right:calc(100vw - (100vw - 56px) + 18px) !important; right:calc(100vw - (100vw - 56px) + 18px) !important; }
     }
     .question-box { padding:12px; border-left:3px solid var(--straw); background:rgba(245,197,66,.07); border-radius:0 10px 10px 0; line-height:1.5; margin:12px 0; }
     @media (max-width:560px) { .lobby-grid {grid-template-columns:1fr;} .mode-grid {grid-template-columns:1fr 1fr;} .mode-tile {min-height:126px;padding:12px;} #audio-controls {top:8px;right:8px;transform:scale(.9);transform-origin:top right;} .hero {padding-top:28px;} }
@@ -1543,7 +1582,7 @@
       h+=`<div class="bounty-layout ${bountyLogOpen?'':'log-collapsed'}"><div class="bounty-main">`;
       h+=`<div class="bounty-private"><div class="secret-title">Senin gizli karakterin</div><p class="small">Bu karakteri diğer oyuncular bulmaya çalışacak. Cevabı sakla!</p>${myBountyCharacter?charImgHtml(myBountyCharacter):'<div class="char-img-box"><div class="char-img-ph">☠</div></div>'}<div class="secret-name">${myBountyCharacter?esc(myBountyCharacter):'Karakter dağıtılıyor…'}</div></div>`;
       h+='<div class="section-title">🏴‍☠️ Mürettebatın ödülleri</div><p class="small">Sıra beklemeden, istediğin korsanın yanındaki alana karakter tahminini yazabilirsin. Yanlış tahmin Berry düşürür.</p>';
-      B.ids.forEach(id=>{const found=B.found.includes(id);const qa=(B.qaHistory||[]).filter(item=>item.playerId===id);const qaHtml=qa.length?qa.map(item=>`<div class="qa-entry"><div class="qa-question">S${item.round||1}: ${esc(item.question)}</div><div class="qa-answer">Cevap: <b>${item.answer?'Evet':'Hayır'}</b></div></div>`).join(''):'<div class="small">Bu oyuncu henüz hiçbir soruyu yanıtlamadı.</div>';h+=`<div class="bounty-player ${found?'found':''}" tabindex="0" aria-label="${esc(B.names[id]||'Korsan')} oyuncusunun soru-cevap geçmişi"><div class="bounty-player-info"><b>${esc(B.names[id]||'Korsan')}${id===me?' (Sen)':''}</b><div class="bounty-amount">${esc(bountyBerry(B.scores[id]||0))}</div>${id!==me&&!found?`<div class="bounty-guess-form"><input id="bountyGuess_${esc(id)}" list="bountyCharacters" placeholder="Karakter tahmini…" autocomplete="off"><button data-bounty-guess="${esc(id)}">Tahmin Et</button></div>`:''}</div><span class="bounty-tag ${found?'found':''}">${found?'✓ '+esc(B.revealed[id]||'Bulundu'):'Gizli karakter'}</span><div class="bounty-hover-history"><strong>📜 ${esc(B.names[id]||'Korsan')} · Soru-Cevap Geçmişi (${qa.length})</strong>${qaHtml}</div></div>`;});
+      B.ids.forEach(id=>{const found=B.found.includes(id);const qa=(B.qaHistory||[]).filter(item=>item.playerId===id);const qaHtml=qa.length?qa.map(item=>`<div class="qa-entry"><div class="qa-question">S${item.round||1}: ${esc(item.question)}</div><div class="qa-answer">Cevap: <b>${item.answer?'Evet':'Hayır'}</b></div></div>`).join(''):'<div class="small">Bu oyuncu henüz hiçbir soruyu yanıtlamadı.</div>';h+=`<div class="bounty-player ${found?'found':''}" tabindex="0" aria-label="${esc(B.names[id]||'Korsan')} oyuncusunun soru-cevap geçmişi"><div class="bounty-player-info"><b class="bounty-history-trigger" role="button" tabindex="0" data-history-toggle="${esc(id)}" aria-expanded="false">${esc(B.names[id]||'Korsan')}${id===me?' (Sen)':''}</b><div class="bounty-amount">${esc(bountyBerry(B.scores[id]||0))}</div>${id!==me&&!found?`<div class="bounty-guess-form"><input id="bountyGuess_${esc(id)}" list="bountyCharacters" placeholder="Karakter tahmini…" autocomplete="off"><button data-bounty-guess="${esc(id)}">Tahmin Et</button></div>`:''}</div><span class="bounty-tag ${found?'found':''}">${found?'✓ '+esc(B.revealed[id]||'Bulundu'):'Gizli karakter'}</span><div class="bounty-hover-history"><strong>📜 ${esc(B.names[id]||'Korsan')} · Soru-Cevap Geçmişi (${qa.length})</strong>${qaHtml}</div></div>`;});
       h+='<datalist id="bountyCharacters">'+CHARACTERS.map(c=>`<option value="${esc(c)}"></option>`).join('')+'</datalist>';
       if(myBountyGuessMessage) h+=`<div class="result-box ${myBountyGuessMessage.startsWith('Doğru')?'win':'lose'}" style="margin:10px 0">${esc(myBountyGuessMessage)}</div>`;
       if(B.phase==='end') {
@@ -1575,6 +1614,29 @@
         view.addEventListener('focusout', () => setTimeout(() => { if (B && gameState === 'bounty' && !view.contains(document.activeElement)) bountyRender(); }, 120));
       }
       const g=id=>document.getElementById(id);
+      const toggleHistory = (id) => {
+        const trigger = view.querySelector('[data-history-toggle="' + CSS.escape(id) + '"]');
+        const row = trigger?.closest('.bounty-player');
+        if (!row || !trigger) return;
+        const willOpen = !row.classList.contains('history-open');
+        view.querySelectorAll('.bounty-player.history-open').forEach(el => el.classList.remove('history-open'));
+        view.querySelectorAll('[data-history-toggle]').forEach(el => el.setAttribute('aria-expanded','false'));
+        if (willOpen) { row.classList.add('history-open'); trigger.setAttribute('aria-expanded','true'); }
+      };
+      view.querySelectorAll('[data-history-toggle]').forEach(trigger => {
+        trigger.addEventListener('click', ev => { ev.stopPropagation(); toggleHistory(trigger.getAttribute('data-history-toggle')); });
+        trigger.addEventListener('keydown', ev => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleHistory(trigger.getAttribute('data-history-toggle')); }
+        });
+      });
+      view.querySelectorAll('.bounty-player').forEach(row => row.addEventListener('click', ev => {
+        if (ev.target.closest('button,input,textarea,a,[data-history-toggle]')) return;
+        if (row.classList.contains('history-open')) {
+          row.classList.remove('history-open');
+          row.querySelector('[data-history-toggle]')?.setAttribute('aria-expanded','false');
+        }
+      }));
+
       if(g('bountyLogToggle')) g('bountyLogToggle').onclick=()=>{
         bountyLogOpen=!bountyLogOpen;
         localStorage.setItem('gla_bounty_log_open',String(bountyLogOpen));
