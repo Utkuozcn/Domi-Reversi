@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grand Line Arcade — One Piece Mini Oyunları</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Roboto:wght@400;500;700&display=swap');
+
+    :root {
+      --ink: #070d18;
+      --panel: rgba(10, 20, 35, .86);
+      --straw: #f5c542;
+      --straw-dark: #d4a017;
+      --sea: #1a6b9a;
+      --pirate-red: #c41e3a;
+      --text: #fff8e7;
+      --muted: #c9b89a;
+      --card-bg: rgba(20, 30, 48, 0.88);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      --scene-bg: url('assets/lobby-grand-line.png');
+      font-family: 'Roboto', system-ui, sans-serif;
+      background-color: #06111e;
+      background-image: linear-gradient(180deg, rgba(3,8,16,.48), rgba(3,8,16,.82)), var(--scene-bg);
+      background-position: center top; background-size: cover; background-repeat: no-repeat;
+      background-attachment: scroll;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 12px;
+    }
+
+    body.lobby-mode { --scene-bg: url('assets/lobby-grand-line.png'); }
+    body.scene-treasure { --scene-bg: url('assets/treasure-hunt.png'); }
+    body.scene-bounty { --scene-bg: url('assets/bounty-hunter.png'); }
+    body.scene-secret { --scene-bg: url('assets/secret-crew.png'); }
+    body.scene-plain { --scene-bg: url('assets/lobby-grand-line.png'); }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 20% 20%, rgba(245,197,66,.055), transparent 35%), linear-gradient(180deg, rgba(3,8,16,.14), rgba(3,8,16,.58));
+      z-index: 0;
+      pointer-events: none;
+    }
+    body::after { content:''; position:absolute; top:0; left:0; right:0; height:100vh; pointer-events:none; z-index:0; opacity:.07; background-image: radial-gradient(#fff 0.6px, transparent .8px); background-size: 40px 40px; }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-mark { display:flex; justify-content:center; align-items:center; gap:10px; margin: 12px 0 2px; color:var(--straw); text-transform:uppercase; letter-spacing:3px; font-size:.7rem; font-weight:800; }
+    .brand-mark::before, .brand-mark::after { content:''; height:1px; width:42px; background:linear-gradient(90deg, transparent, var(--straw-dark)); }
+    .brand-mark::after { transform:scaleX(-1); }
+    h1 {
+      font-family: 'Pirata One', cursive;
+      text-align: center;
+      font-size: clamp(2.8rem, 8vw, 4.7rem);
+      color: var(--straw);
+      text-shadow: 3px 3px 0 #000, 0 0 20px rgba(245,197,66,0.5);
+      margin-bottom: 2px;
+      letter-spacing: 2px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 22px;
+      text-shadow: 1px 1px 3px #000;
+      letter-spacing:.08em;
+    }
+
+    .card {
+      background: linear-gradient(145deg, rgba(18,34,52,.91), rgba(7,15,27,.93));
+      backdrop-filter: none;
+      border-radius: 20px;
+      padding: clamp(16px, 3.5vw, 28px);
+      margin-bottom: 16px;
+      border: 1px solid rgba(245,197,66,.36);
+      box-shadow: 0 22px 60px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05);
+      position:relative; overflow:hidden;
+    }
+
+    input, button, textarea {
+      width: 100%;
+      padding: 13px 15px;
+      border-radius: 10px;
+      border: 2px solid #3a4a5c;
+      background: rgba(10, 20, 35, 0.9);
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--straw);
+      box-shadow: 0 0 0 3px rgba(245,197,66,0.25);
+    }
+    input::placeholder { color: #7a8a9a; }
+
+    button {
+      background: linear-gradient(180deg, var(--straw) 0%, var(--straw-dark) 100%);
+      color: #1a1200;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: transform 0.15s, filter 0.15s;
+      box-shadow: 0 4px 0 #9a7b12;
+    }
+    button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    button:active { transform: translateY(1px); box-shadow: 0 2px 0 #9a7b12; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    button.success {
+      background: linear-gradient(180deg, #3ecf6a 0%, #2a9d4a 100%);
+      box-shadow: 0 4px 0 #1e7a35;
+      color: #041a0c;
+    }
+    button.secondary {
+      background: linear-gradient(180deg, #4a5a6c 0%, #2f3a48 100%);
+      box-shadow: 0 4px 0 #1c2430;
+      color: var(--text);
+    }
+
+    .player-list, .room-list { list-style: none; margin: 12px 0; }
+    .player-list li, .room-list li {
+      padding: 11px 14px;
+      background: rgba(10,20,35,0.7);
+      border-radius: 10px;
+      margin-bottom: 7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #2a3a4c;
+    }
+    .player-list li.host::after {
+      content: "KAPTAN";
+      font-size: 0.68rem;
+      background: var(--straw);
+      color: #1a1200;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .room-list li { cursor: pointer; transition: all 0.15s; }
+    .room-list li:hover {
+      border-color: var(--straw);
+      background: rgba(245,197,66,0.1);
+    }
+    .room-code { font-weight: 700; color: var(--straw); font-size: 1.15rem; }
+    .room-meta { font-size: 0.8rem; color: var(--muted); }
+
+    .role-box {
+      background: rgba(10,20,35,0.8);
+      border: 3px solid var(--straw);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      margin: 12px 0;
+      position: relative;
+    }
+    .role-box.spy { border-color: var(--pirate-red); }
+    .role-box h2 {
+      font-family: 'Pirata One', cursive;
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+      color: var(--straw);
+    }
+    .role-box.spy h2 { color: #ff6b6b; }
+
+    .notes { height: 120px; resize: vertical; }
+    .vote-counter {
+      text-align: center;
+      font-size: 1.1rem;
+      margin: 10px 0;
+      color: var(--straw);
+      font-weight: 700;
+    }
+    .hidden { display: none !important; }
+    .view-nav { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+    .view-nav button { width:auto; flex:1 1 145px; margin:0; padding:10px 13px; font-size:.82rem; }
+    .view-nav .secondary { background:#26384a; box-shadow:0 3px 0 #14202c; }
+    @media (max-width:520px) { .view-nav button { flex:1 1 100%; } }
+
+    .status { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+    .result-box {
+      text-align: center;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .result-box.win {
+      background: rgba(46, 160, 80, 0.25);
+      border: 2px solid #3ecf6a;
+    }
+    .result-box.lose {
+      background: rgba(192, 40, 40, 0.25);
+      border: 2px solid #e04545;
+    }
+    .vote-options button {
+      margin-bottom: 8px;
+      background: linear-gradient(180deg, #3a4a5c 0%, #2a3545 100%);
+      box-shadow: 0 3px 0 #1a2230;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .vote-options button:hover {
+      background: linear-gradient(180deg, var(--straw) 0%, var(--straw-dark) 100%);
+      color: #1a1200;
+    }
+    .small { font-size: 0.96rem; line-height: 1.5; color: var(--muted); }
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 16px 0 8px;
+      color: var(--straw);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .empty-rooms {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px;
+      font-size: 0.9rem;
+    }
+    .wanted-label {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--straw-dark);
+      color: #1a1200;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* Audio controls - top right */
+    #audio-controls {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20, 30, 48, 0.85);
+      backdrop-filter: none;
+      padding: 8px 12px;
+      border-radius: 30px;
+      border: 1px solid var(--straw-dark);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    #audio-controls button {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      margin: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: none;
+      background: rgba(245, 197, 66, 0.2);
+      color: var(--straw);
+      border: 1px solid var(--straw-dark);
+      text-transform: none;
+    }
+    #audio-controls button:hover {
+      background: var(--straw);
+      color: #1a1200;
+      transform: none;
+    }
+    #volume-slider {
+      width: 80px;
+      height: 6px;
+      margin: 0;
+      padding: 0;
+      accent-color: var(--straw);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+    }
+    .mode-btn.active { background: linear-gradient(135deg, #ffe08a, var(--straw)); color: #1a1200; border-color: var(--straw); box-shadow: 0 0 0 2px rgba(245,197,66,.16), 0 5px 18px rgba(245,197,66,.12); }
+    .hero { position:relative; text-align:center; padding: 16px 12px 24px; }
+    .hero-kicker { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border:1px solid rgba(245,197,66,.35); border-radius:999px; background:rgba(245,197,66,.08); color:#ffdc75; font-size:.75rem; letter-spacing:1.5px; text-transform:uppercase; }
+    .hero-copy { max-width:540px; margin:12px auto 0; color:#d4e1eb; line-height:1.65; font-size:.98rem; }
+    .hero-emblem { width:78px; height:78px; display:grid; place-items:center; margin:0 auto 12px; border-radius:50%; font-size:2.5rem; border:1px solid rgba(245,197,66,.6); background:radial-gradient(circle, rgba(245,197,66,.22), rgba(7,15,27,.2) 70%); box-shadow:0 0 35px rgba(245,197,66,.13), inset 0 0 20px rgba(245,197,66,.1); }
+    .lobby-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .mode-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0 16px; }
+    .mode-tile { text-align:left; min-height:118px; margin:0; padding:15px; border:1px solid #34475a; border-radius:14px; background:linear-gradient(145deg,rgba(28,48,68,.95),rgba(10,20,34,.96)); box-shadow:none; color:var(--text); text-transform:none; letter-spacing:0; transition:transform .18s,border-color .18s,background .18s; }
+    .mode-tile:hover { transform:translateY(-3px); border-color:var(--straw-dark); }
+    .mode-tile.active { border-color:var(--straw); background:linear-gradient(145deg,rgba(95,72,23,.55),rgba(17,29,42,.98)); box-shadow:inset 0 0 0 1px rgba(245,197,66,.18); color:#fff4cb; }
+    .mode-icon { font-size:1.65rem; display:block; margin-bottom:8px; }
+    .mode-name { display:block; font-weight:800; font-size:.94rem; margin-bottom:5px; }
+    .mode-desc { display:block; color:#aebfd0; font-size:.76rem; font-weight:400; line-height:1.4; }
+    .den-settings { display:none; border:1px solid rgba(245,197,66,.3); border-radius:12px; padding:14px; margin:0 0 14px; background:rgba(245,197,66,.06); }
+    .den-settings.visible { display:block; }
+    .den-duration-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:8px; }
+    .den-duration-option { margin:0; padding:10px 6px; border:1px solid #536477; background:rgba(9,19,31,.8); color:var(--text); text-transform:none; letter-spacing:0; }
+    .den-duration-option.active { border-color:var(--straw); color:#1a1200; background:var(--straw); }
+    .den-board { border:1px solid rgba(245,197,66,.28); border-radius:16px; padding:16px; background:linear-gradient(135deg,rgba(245,197,66,.08),rgba(7,15,27,.72)); margin:12px 0; }
+    .den-word-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin:12px 0; }
+    .den-emoji-slots { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:16px 0; }
+    .den-emoji-slot { min-width:0; aspect-ratio:1/1; min-height:92px; border:2px solid rgba(245,197,66,.48); border-radius:16px; background:linear-gradient(145deg,rgba(245,197,66,.12),rgba(6,14,25,.9)); display:flex; align-items:center; justify-content:center; position:relative; font-size:clamp(2.6rem,7vw,6.5rem); line-height:1; box-shadow:inset 0 0 24px rgba(0,0,0,.2); }
+    .den-emoji-slot.active { border-color:var(--straw); box-shadow:0 0 0 2px rgba(245,197,66,.15),0 0 22px rgba(245,197,66,.18); }
+    .den-emoji-slot .slot-num { position:absolute; top:6px; left:9px; font-size:.75rem; color:var(--straw); font-weight:800; }
+    .den-emoji-slot .slot-status { position:absolute; bottom:6px; font-size:.65rem; color:var(--muted,#aab3c1); letter-spacing:.04em; }
+    .den-emoji-library { display:grid; grid-template-columns:repeat(auto-fit,minmax(48px,1fr)); gap:7px; margin-top:12px; }
+    .den-emoji-pick { min-height:52px; padding:4px!important; font-size:1.9rem!important; line-height:1!important; border:1px solid rgba(245,197,66,.22)!important; background:rgba(8,18,32,.92)!important; }
+    .den-emoji-pick:disabled { opacity:.35; cursor:not-allowed; }
+    .den-emoji-pick:not(:disabled):hover { transform:translateY(-2px); border-color:var(--straw)!important; }
+    @media(max-width:620px){ .den-emoji-slots{gap:5px}.den-emoji-slot{border-radius:9px;min-height:58px;font-size:clamp(2rem,9vw,3.6rem)}.den-emoji-slot .slot-num{top:3px;left:4px;font-size:.58rem}.den-emoji-slot .slot-status{display:none}.den-emoji-library{grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.den-emoji-pick{min-height:43px;font-size:1.55rem!important} }
+    .den-word { padding:10px 8px; text-align:center; border:1px solid rgba(255,100,100,.45); background:rgba(150,30,30,.18); border-radius:9px; font-weight:800; overflow-wrap:anywhere; }
+    .den-score-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 11px; border-radius:8px; background:rgba(4,11,20,.5); margin:6px 0; }
+    .den-score-row .pts { color:var(--straw); font-weight:900; white-space:nowrap; }
+    .den-feedback { min-height:26px; color:var(--straw); font-weight:700; margin:8px 0; }
+    .den-guess-form { display:flex; gap:8px; margin-top:12px; }
+    .den-draw-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0; }
+    .den-draw-toolbar button { width:auto; margin:0; }
+    .den-draw-canvas { display:block; width:100%; height:clamp(250px,42vw,430px); background:#f8f5e9; border:2px solid rgba(245,197,66,.65); border-radius:12px; touch-action:none; cursor:crosshair; }
+    .den-style-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:14px 0; }
+    .den-style-card { padding:14px 8px!important; min-height:90px; font-size:1rem!important; }
+    @media(max-width:520px){ .den-style-grid{grid-template-columns:1fr}.den-style-card{min-height:60px} }
+    .den-guess-form input { flex:1; min-width:0; margin:0; }
+    .den-guess-form button { width:auto; margin:0; }
+    @media(max-width:480px) { .den-guess-form { flex-direction:column; } .den-guess-form button { width:100%; } }
+    .lobby-section { border-top:1px solid rgba(137,163,185,.18); padding-top:16px; margin-top:16px; }
+    .lobby-section .section-title { margin-top:0; }
+    .bounty-board { border:1px solid rgba(245,197,66,.28); border-radius:16px; padding:16px; background:linear-gradient(135deg,rgba(245,197,66,.08),rgba(7,15,27,.55)); margin:12px 0; }
+    .bounty-board h2 { font-family:'Pirata One',cursive; font-size:1.8rem; color:var(--straw); margin-bottom:4px; }
+    .bounty-step { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid rgba(137,163,185,.14); }
+    .bounty-step:last-child { border-bottom:0; }
+    .bounty-step .num { flex:none; width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:rgba(245,197,66,.14);color:var(--straw);font-weight:800; }
+    .bounty-player { position:relative; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; border-radius:10px; background:rgba(4,11,20,.52); border:1px solid #293c4f; margin:9px 0; font-size:1rem; line-height:1.5; }
+    .bounty-hover-history { display:none; position:absolute; z-index:50; left:8px; right:8px; top:calc(100% - 2px); max-height: min(48vh, 420px); overflow:auto; padding:16px; border:2px solid var(--straw-dark); border-radius:12px; background:rgba(5,12,22,.99); box-shadow:0 12px 30px rgba(0,0,0,.65); color:#e6edf4; font-size:1rem; line-height:1.6; }
+    .bounty-player:hover, .bounty-player:focus-within { z-index:20; }
+    .bounty-player:hover .bounty-hover-history, .bounty-player:focus-within .bounty-hover-history { display:block; }
+    .bounty-hover-history > strong { display:block; font-size:1.08rem; line-height:1.45; margin-bottom:8px; color:var(--straw); }
+    .bounty-hover-history .qa-entry { padding:11px 0; border-bottom:1px solid rgba(137,163,185,.22); line-height:1.6; }
+    .bounty-hover-history .qa-entry:last-child { border-bottom:0; }
+    .bounty-hover-history .qa-question { color:var(--straw); font-weight:800; font-size:1rem; overflow-wrap:anywhere; }
+    .bounty-hover-history .qa-answer { margin-top:5px; font-size:1rem; }
+    .bounty-player { cursor:help; }
+    .bounty-player.found { border-color:rgba(62,207,106,.55); background:rgba(46,160,80,.09); }
+    .bounty-tag { font-size:.85rem; line-height:1.35; border-radius:999px; padding:5px 10px; color:#d7e3eb; background:rgba(122,144,163,.16); }
+    .bounty-tag.found { color:#9ef0b2; background:rgba(62,207,106,.13); }
+    .bounty-private { text-align:center; border:1px solid var(--straw-dark); border-radius:15px; padding:16px; margin:12px 0; background:radial-gradient(circle at 50% 0,rgba(245,197,66,.12),transparent 60%),rgba(4,11,20,.58); }
+    .bounty-private .secret-title { font-family:'Pirata One',cursive; font-size:1.6rem; color:var(--straw); }
+    .bounty-private .secret-name { font-weight:800; font-size:1.15rem; margin-top:8px; }
+    .bounty-actions { display:grid; gap:10px; }
+    .bounty-actions .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .bounty-actions .row button { margin:0; }
+    .bounty-layout { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(270px,.85fr); gap:16px; align-items:start; }
+    .bounty-main,.bounty-sidebar { min-width:0; }
+    .bounty-sidebar { position:sticky; top:12px; }
+    .bounty-log { max-height:min(68vh,680px); overflow-y:auto; padding-right:6px; }
+    .bounty-log-item { padding:10px 11px; margin:0 0 8px; border:1px solid rgba(137,163,185,.18); border-radius:9px; background:rgba(4,11,20,.55); line-height:1.45; overflow-wrap:anywhere; }
+    .bounty-log-item .log-num { color:var(--straw); font-weight:800; margin-right:6px; }
+    .bounty-amount { color:var(--straw); font-weight:900; font-size:1.05rem; }
+    .bounty-player-info { flex:1; min-width:0; }
+    .bounty-guess-form { display:flex; gap:6px; align-items:center; margin-top:8px; max-width:520px; }
+    .bounty-guess-form input { flex:1; min-width:90px; margin:0; padding:9px 10px; }
+    .bounty-guess-form button { width:auto; margin:0; padding:9px 12px; white-space:nowrap; }
+    .bounty-answer-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:11px; margin-top:14px; }
+    .bounty-answer-card { border:1px solid rgba(137,163,185,.22); background:rgba(4,11,20,.6); border-radius:10px; padding:14px; min-width:0; font-size:1rem; line-height:1.5; }
+    .bounty-answer-card strong { display:block; margin-bottom:6px; }
+    .bounty-answer-card .answer-value { color:var(--straw); font-weight:800; font-size:1.08rem; }
+    .bounty-answer-card input { margin:7px 0 0; padding:8px; }
+    .bounty-answer-card button { margin:7px 0 0; padding:8px; }
+    @media(max-width:560px) { .bounty-player { align-items:flex-start; flex-wrap:wrap; } .bounty-player > .bounty-tag { margin-left:auto; } .bounty-guess-form { width:100%; } }
+    .bounty-pass { background:rgba(137,163,185,.12); border:1px solid #647789; }
+    @media(max-width:760px) { .bounty-layout { grid-template-columns:1fr; } .bounty-sidebar { position:static; } .bounty-log { max-height:340px; } }
+    .question-box { padding:12px; border-left:3px solid var(--straw); background:rgba(245,197,66,.07); border-radius:0 10px 10px 0; line-height:1.5; margin:12px 0; }
+    @media (max-width:560px) { .lobby-grid {grid-template-columns:1fr;} .mode-grid {grid-template-columns:1fr 1fr;} .mode-tile {min-height:126px;padding:12px;} #audio-controls {top:8px;right:8px;transform:scale(.9);transform-origin:top right;} .hero {padding-top:28px;} }
+    @media (max-width:380px) { .mode-grid {grid-template-columns:1fr;} }
+    .vote-sel { background: var(--pirate-red) !important; color: #fff !important; }
+    .char-img-box { width: min(300px, 100%); aspect-ratio: 1 / 1; margin: 8px auto; border-radius: 12px; overflow: hidden; border: 3px solid var(--straw-dark); background: rgba(10,20,34,.7); display: flex; align-items: center; justify-content: center; }
+    .char-img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+    .char-img-ph { font-size: 3rem; }
+    .char-img-box.md { width: 150px; margin: 0; flex: none; }
+    .au-last { display: flex; gap: 12px; align-items: center; background: rgba(245,197,66,.12); border: 2px solid var(--straw-dark); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
+    .au-last b { color: var(--straw); font-size: 1.15rem; }
+    .char-img-box.sm { width: 38px; height: 38px; margin: 0; flex: none; border-width: 2px; border-radius: 8px; }
+    .char-img-box.sm .char-img-ph { font-size: 1.1rem; }
+    .au-slot.f { display: flex; align-items: center; gap: 8px; min-height: 46px; }
+    .au-slot.f span { line-height: 1.15; }
+    .au-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .au-side { background: rgba(10,20,34,.7); border: 2px solid #345; border-radius: 12px; padding: 10px; }
+    .au-side.me { border-color: var(--straw); }
+    .au-side.turn { box-shadow: 0 0 0 3px var(--pirate-red); }
+    .au-side h3 { font-size: 1rem; }
+    .au-money { font-size: 1.6rem; color: var(--straw); font-weight: 700; }
+    .au-slot { border: 1px dashed #567; border-radius: 6px; padding: 4px 6px; margin-top: 4px; font-size: .85rem; min-height: 26px; }
+    .au-slot.f { border-style: solid; border-color: var(--straw-dark); background: rgba(245,197,66,.12); }
+    .au-char { text-align: center; font-family: 'Pirata One', cursive; font-size: 2rem; color: var(--straw); margin: 6px 0; }
+    .au-mid { text-align: center; color: var(--muted); }
+    .au-row { display: flex; gap: 8px; }
+    .au-row > * { flex: 1; }
+    .au-log { font-size: .8rem; color: var(--muted); max-height: 130px; overflow: auto; margin-top: 12px; }
+    .au-log div { padding: 2px 0; border-bottom: 1px solid #234; }
+  </style>
+</head>
+<body class="lobby-mode">
+  <!-- Background Music -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="drums-of-liberation.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Audio Controls (top right) -->
+  <div id="audio-controls">
+    <button id="btnMute" title="Müziği sustur / aç" aria-label="Müziği sustur veya aç">🔊</button>
+    <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.35" title="Ses seviyesi">
+  </div>
+
+  <div class="container">
+    <div class="brand-mark">The Grand Line Arcade</div>
+    <h1>Grand Line</h1>
+    <p class="subtitle">ONE PIECE · MINI OYUNLAR · NAKAMALARINLA BİRLİKTE</p>
+
+    <div class="hero">
+      <div class="hero-emblem">☠</div>
+      <div class="hero-kicker">⚓ Mürettebatını Topla</div>
+      <p class="hero-copy">Denizlere açıl, ödülleri kap ve nakamalarına meydan oku. Bir oda kur, kodunu paylaş ve Grand Line'daki maceranı başlat.</p>
+    </div>
+
+    <div id="lobby" class="card">
+      <div class="section-title" style="margin-top:0;">Kaptan kim?</div>
+      <input id="playerName" placeholder="Korsan adın..." maxlength="16" autocomplete="nickname" />
+      <div class="section-title">Seferini seç</div>
+      <div class="mode-grid">
+        <button id="modeSpy" class="mode-tile active"><span class="mode-icon">🕵️</span><span class="mode-name">Casusu Bul</span><span class="mode-desc">Blöf yap, şüphelileri ortaya çıkar.</span></button>
+        <button id="modeAuc" class="mode-tile"><span class="mode-icon">⚓</span><span class="mode-name">Nakama Müzayedesi</span><span class="mode-desc">Teklif ver, en güçlü kadroyu kur.</span></button>
+        <button id="modeSec" class="mode-tile"><span class="mode-icon">🕶️</span><span class="mode-name">Secret Nakama</span><span class="mode-desc">Gizli karakterleri ipuçlarından çöz.</span></button>
+        <button id="modeBounty" class="mode-tile"><span class="mode-icon">🎯</span><span class="mode-name">Ödül Avcısı <span style="color:#9ef0b2;font-size:.65rem;">YENİ</span></span><span class="mode-desc">Soru sor, karakterleri bul, ödül topla.</span></button>
+        <button id="modeDen" class="mode-tile"><span class="mode-icon">☎️</span><span class="mode-name">Den Den Mushi: Gizli Mesaj</span><span class="mode-desc">Konuşarak, çizerek veya emojilerle anlat; puanları topla.</span></button>
+      </div>
+      <div id="denLobbySettings" class="den-settings">
+        <div class="section-title" style="margin-top:0">🎭 Tur ayarları</div>
+        <p class="small">Her turun anlatıcısı, kendi turunda Konuşarak, Çizimle veya Emojiyle Anlat seçeneklerinden birini seçer. Anlatıcı puan katsayıları her tur rastgele atanır.</p>
+        <div id="denVoiceDuration">
+        <div class="section-title" style="margin-top:0">⏱️ Tur süresi</div>
+        <p class="small">Bu ayar odayı kuran kaptan tarafından belirlenir.</p>
+        <div class="den-duration-grid">
+          <button type="button" class="den-duration-option" data-den-duration="15">15 sn</button>
+          <button type="button" class="den-duration-option active" data-den-duration="30">30 sn</button>
+          <button type="button" class="den-duration-option" data-den-duration="45">45 sn</button>
+          <button type="button" class="den-duration-option" data-den-duration="60">60 sn</button>
+        </div>
+        </div>
+        <div class="small" style="padding:8px 0 2px">Emoji turu sabit 40 saniyedir: 5 emoji, her biri için 8 saniye. Çizim turu da tur süresi ayarını kullanır.</div>
+      </div>
+      <div class="lobby-grid">
+        <button id="btnCreate" class="success">🏴‍☠️ Yeni Oda Oluştur</button>
+        <div style="display:flex;gap:7px;">
+          <input id="roomCodeInput" placeholder="Oda kodu" maxlength="6" style="text-transform:uppercase;flex:1;min-width:0;margin:0;" />
+          <button id="btnJoinCode" class="secondary" style="width:auto;min-width:82px;margin:0;">Katıl</button>
+        </div>
+      </div>
+      <p class="status" id="lobbyStatus"></p>
+      <div class="lobby-section">
+        <div class="section-title">🌊 Aktif Odalar</div>
+        <ul class="room-list" id="roomList"><li class="empty-rooms">Şimdilik deniz sakin...<br>İlk odayı kur ve nakamalarını çağır!</li></ul>
+      </div>
+      <div class="lobby-section">
+        <div class="section-title">Nasıl oynanır?</div>
+        <div class="bounty-step"><span class="num">1</span><div><b>Oda kur</b><div class="small">Korsan adını yaz ve oyun modunu seç.</div></div></div>
+        <div class="bounty-step"><span class="num">2</span><div><b>Nakamalarını davet et</b><div class="small">Oda kodunu arkadaşlarınla paylaş.</div></div></div>
+        <div class="bounty-step"><span class="num">3</span><div><b>Macera başlasın</b><div class="small">Kaptan oyunu başlatınca hepiniz aynı tura katılırsınız.</div></div></div>
+      </div>
+    </div>
+
+    <div id="room" class="card hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+          <strong>Oda:</strong> <span id="roomCodeDisplay" style="color:var(--straw); font-size:1.35rem; font-family:'Pirata One',cursive;"></span>
+        </div>
+        <button id="btnLeave" class="secondary" style="width:auto; padding:7px 12px; font-size:0.85rem; margin:0;">← Lobiye Dön</button>
+      </div>
+      <p class="small" id="roomModeLabel"></p>
+      <ul class="player-list" id="playerList"></ul>
+      <button id="btnStart" class="success hidden">Oyunu Başlat</button>
+      <p class="status" id="roomStatus">Kaptan oyunu başlatana kadar bekleyin...</p>
+    </div>
+
+    <div id="auction" class="card hidden">
+      <div id="auView"></div>
+    </div>
+
+    <div id="bounty" class="card hidden">
+      <div id="bountyView"></div>
+    </div>
+
+    <div id="den" class="card hidden">
+      <div id="denView"></div>
+    </div>
+
+    <div id="game" class="card hidden">
+      <div class="view-nav"><button class="secondary" onclick="document.getElementById('btnLeave').click()">← Lobiye Dön / Mod Değiştir</button></div>
+      <div id="roleBox" class="role-box">
+        <div class="wanted-label" id="roleLabel">BİLGİ</div>
+        <p class="small" style="margin-top:8px;">Senin bilgin:</p>
+        <div id="roleImg"></div>
+        <h2 id="roleText">...</h2>
+        <p id="roleSub" class="small"></p>
+      </div>
+
+      <label class="small">Not Defteri (sadece sen görürsün)</label>
+      <textarea id="notes" class="notes" placeholder="Şüpheli nakamalar, ipuçları..."></textarea>
+
+      <div class="vote-counter" id="voteCounter">Oylama Başlat: 0 / ?</div>
+      <button id="btnVoteStart">Oylama Başlat</button>
+
+      <div id="votingArea" class="hidden">
+        <p style="margin:12px 0 8px; font-weight:600; color:var(--straw);">Casus kim?</p>
+        <div class="vote-options" id="voteOptions"></div>
+      </div>
+
+      <div id="resultArea" class="hidden"></div>
+      <div id="guessArea" class="hidden"></div>
+      <button id="btnNewRound" class="success hidden" style="margin-top:12px;">Yeni Tur</button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://tssumggdsbcjdhmfphlg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_2Y60SRvr2Q2_Bb7Sa1gaVw_b0PM6o-J';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Her karakter için sadece 2 çok genel bilgi
+    const CHARACTER_DATA = {
+      "Monkey D. Luffy": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Roronoa Zoro": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Nami": ["Kadın karakter", "Ödülü var"],
+      "Usopp": ["Ödülü var", "Devil Fruit yok"],
+      "Sanji": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Tony Tony Chopper": ["Devil Fruit kullanıcısı", "Zoan tipi"],
+      "Nico Robin": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Franky": ["Ödülü var", "Devil Fruit yok"],
+      "Brook": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Jinbe": ["Haki kullanabiliyor", "Balıkadam"],
+      "Portgas D. Ace": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Sabo": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Shanks": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Buggy": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Dracule Mihawk": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Boa Hancock": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Trafalgar Law": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Eustass Kid": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Killer": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "X Drake": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Basil Hawkins": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Jewelry Bonney": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Capone Bege": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Scratchmen Apoo": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Urouge": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Marshall D. Teach": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Shiryu": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Jesus Burgess": ["Haki kullanabiliyor", "Ödülü var"],
+      "Edward Newgate": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Marco": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Vista": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Jozu": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Kaido": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "King": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Queen": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Jack": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Yamato": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Charlotte Linlin": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Charlotte Katakuri": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Charlotte Smoothie": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Charlotte Cracker": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Charlotte Perospero": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Donquixote Doflamingo": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Trebol": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Diamante": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Pica": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Vergo": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Sugar": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Crocodile": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Daz Bones": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Bentham": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Monkey D. Garp": ["Haki kullanabiliyor", "Denizci"],
+      "Sengoku": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Sakazuki": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Borsalino": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Kuzan": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Issho": ["Devil Fruit kullanıcısı", "Denizci"],
+      "Rob Lucci": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Kaku": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Silvers Rayleigh": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Gol D. Roger": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Kozuki Oden": ["Haki kullanabiliyor", "Kılıç kullanıyor"],
+      "Kozuki Momonosuke": ["Devil Fruit kullanıcısı", "Wano ile bağlantılı"],
+      "Kin'emon": ["Devil Fruit kullanıcısı", "Wano ile bağlantılı"],
+      "Kikunojo": ["Haki kullanabiliyor", "Kadın karakter"],
+      "Inuarashi": ["Haki kullanabiliyor", "Wano ile bağlantılı"],
+      "Nekomamushi": ["Haki kullanabiliyor", "Wano ile bağlantılı"],
+      "Carrot": ["Kadın karakter", "Devil Fruit yok"],
+      "Vivi": ["Kadın karakter", "Devil Fruit yok"],
+      "Enel": ["Devil Fruit kullanıcısı", "Logia tipi"],
+      "Arlong": ["Balıkadam", "Devil Fruit yok"],
+      "Bartholomew Kuma": ["Devil Fruit kullanıcısı", "Haki kullanabiliyor"],
+      "Gecko Moria": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Perona": ["Devil Fruit kullanıcısı", "Kadın karakter"],
+      "Hody Jones": ["Balıkadam", "Devil Fruit yok"],
+      "Shirahoshi": ["Kadın karakter", "Balıkadam"],
+      "Fisher Tiger": ["Balıkadam", "Devil Fruit yok"],
+      "Monkey D. Dragon": ["Devrimci Ordu", "Haki kullanabiliyor"],
+      "Emporio Ivankov": ["Devrimci Ordu", "Devil Fruit kullanıcısı"],
+      "Koala": ["Devrimci Ordu", "Kadın karakter"],
+      "Hack": ["Devrimci Ordu", "Balıkadam"],
+      "Morley": ["Devrimci Ordu", "Dev ırkı"],
+      "Belo Betty": ["Devrimci Ordu", "Kadın karakter"],
+      "Smoker": ["Devil Fruit kullanıcısı", "Logia tipi"],
+      "Tashigi": ["Kadın karakter", "Kılıç kullanıyor"],
+      "Koby": ["Denizci", "Haki kullanabiliyor"],
+      "Helmeppo": ["Denizci", "Devil Fruit yok"],
+      "Hina": ["Kadın karakter", "Denizci"],
+      "Tsuru": ["Kadın karakter", "Denizci"],
+      "Sentomaru": ["Denizci", "Devil Fruit yok"],
+      "Aramaki": ["Denizci", "Devil Fruit kullanıcısı"],
+      "Momonga": ["Denizci", "Devil Fruit yok"],
+      "Kuro": ["Ödülü var", "Devil Fruit yok"],
+      "Don Krieg": ["Ödülü var", "Devil Fruit yok"],
+      "Gin": ["Devil Fruit yok"],
+      "Hatchan": ["Balıkadam", "Ödülü var"],
+      "Kuroobi": ["Balıkadam", "Ödülü var"],
+      "Chew": ["Balıkadam", "Ödülü var"],
+      "Alvida": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Axe-Hand Morgan": ["Denizci", "Devil Fruit yok"],
+      "Bellamy": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Foxy": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Wapol": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Dr. Kureha": ["Kadın karakter", "Doktor"],
+      "Dr. Hiriluk": ["Doktor", "Devil Fruit yok"],
+      "Red-Leg Zeff": ["Devil Fruit yok", "Aşçı"],
+      "Nojiko": ["Kadın karakter", "Devil Fruit yok"],
+      "Bellemere": ["Kadın karakter", "Denizci"],
+      "Pell": ["Devil Fruit kullanıcısı", "Zoan tipi", "Alabasta ile bağlantılı"],
+      "Chaka": ["Devil Fruit kullanıcısı", "Zoan tipi", "Alabasta ile bağlantılı"],
+      "Nefertari Cobra": ["Kraliyet ailesinden"],
+      "Galdino": ["Devil Fruit kullanıcısı", "Baroque Works"],
+      "Miss Doublefinger": ["Kadın karakter", "Baroque Works"],
+      "Miss Goldenweek": ["Kadın karakter", "Baroque Works"],
+      "Mr. 5": ["Devil Fruit kullanıcısı", "Baroque Works"],
+      "Miss Valentine": ["Kadın karakter", "Baroque Works"],
+      "Wyper": ["Devil Fruit yok", "Skypiea ile bağlantılı"],
+      "Gan Fall": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Blueno": ["Devil Fruit kullanıcısı", "Dünya Hükümeti"],
+      "Kalifa": ["Kadın karakter", "Dünya Hükümeti"],
+      "Jabra": ["Zoan tipi", "Dünya Hükümeti"],
+      "Spandam": ["Devil Fruit yok", "Dünya Hükümeti"],
+      "Absalom": ["Devil Fruit kullanıcısı"],
+      "Ryuma": ["Kılıç kullanıyor", "Wano ile bağlantılı"],
+      "Dr. Hogback": ["Doktor", "Devil Fruit yok"],
+      "Boa Marigold": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Boa Sandersonia": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Izo": ["Wano ile bağlantılı", "Beyaz Sakal Korsanları"],
+      "Thatch": ["Beyaz Sakal Korsanları", "Devil Fruit yok"],
+      "Rakuyo": ["Beyaz Sakal Korsanları", "Devil Fruit yok"],
+      "Namur": ["Balıkadam", "Beyaz Sakal Korsanları"],
+      "King Neptune": ["Kraliyet ailesinden", "Balıkadam"],
+      "Otohime": ["Kadın karakter", "Kraliyet ailesinden"],
+      "Vander Decken IX": ["Devil Fruit kullanıcısı"],
+      "Hammond": ["Balıkadam", "Devil Fruit yok"],
+      "Caesar Clown": ["Devil Fruit kullanıcısı", "Logia tipi"],
+      "Monet": ["Kadın karakter", "Logia tipi"],
+      "Rebecca": ["Kadın karakter", "Devil Fruit yok"],
+      "Kyros": ["Devil Fruit yok", "Kılıç kullanıyor"],
+      "Viola": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Bartolomeo": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Cavendish": ["Ödülü var", "Kılıç kullanıyor"],
+      "Baby 5": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Buffalo": ["Devil Fruit kullanıcısı", "Donquixote Ailesi"],
+      "Dellinger": ["Donquixote Ailesi", "Devil Fruit yok"],
+      "Lao G": ["Donquixote Ailesi", "Devil Fruit yok"],
+      "Senor Pink": ["Devil Fruit kullanıcısı", "Donquixote Ailesi"],
+      "Gladius": ["Devil Fruit kullanıcısı", "Donquixote Ailesi"],
+      "Jora": ["Kadın karakter", "Donquixote Ailesi"],
+      "Machvise": ["Donquixote Ailesi", "Devil Fruit kullanıcısı"],
+      "Charlotte Pudding": ["Kadın karakter", "Big Mom Korsanları"],
+      "Charlotte Brulee": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Charlotte Oven": ["Big Mom Korsanları", "Devil Fruit kullanıcısı"],
+      "Charlotte Opera": ["Big Mom Korsanları", "Devil Fruit kullanıcısı"],
+      "Vinsmoke Judge": ["Germa 66", "Devil Fruit yok"],
+      "Vinsmoke Reiju": ["Kadın karakter", "Germa 66"],
+      "Vinsmoke Ichiji": ["Germa 66", "Devil Fruit yok"],
+      "Vinsmoke Niji": ["Germa 66", "Devil Fruit yok"],
+      "Vinsmoke Yonji": ["Germa 66", "Devil Fruit yok"],
+      "Pekoms": ["Mink", "Big Mom Korsanları"],
+      "Pedro": ["Mink", "Devil Fruit yok"],
+      "Kozuki Hiyori": ["Kadın karakter", "Wano ile bağlantılı"],
+      "Raizo": ["Wano ile bağlantılı", "Devil Fruit kullanıcısı"],
+      "Denjiro": ["Wano ile bağlantılı", "Kılıç kullanıyor"],
+      "Kurozumi Orochi": ["Wano ile bağlantılı", "Devil Fruit kullanıcısı"],
+      "Kurozumi Kanjuro": ["Wano ile bağlantılı", "Devil Fruit kullanıcısı"],
+      "Tama": ["Kadın karakter", "Wano ile bağlantılı"],
+      "Ulti": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Page One": ["Devil Fruit kullanıcısı", "Kaido'nun adamı"],
+      "Black Maria": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Sasaki": ["Devil Fruit kullanıcısı", "Kaido'nun adamı"],
+      "Who's-Who": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Kozuki Toki": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Hyogoro": ["Wano ile bağlantılı", "Devil Fruit yok"],
+      "Ashura Doji": ["Wano ile bağlantılı", "Kılıç kullanıyor"],
+      "Dr. Vegapunk": ["Devil Fruit kullanıcısı", "Bilim insanı"],
+      "Benn Beckman": ["Devil Fruit yok", "Haki kullanabiliyor"],
+      "Yasopp": ["Devil Fruit yok", "Ödülü var"],
+      "Lucky Roo": ["Devil Fruit yok", "Ödülü var"],
+      "Scopper Gaban": ["Haki kullanabiliyor", "Devil Fruit yok"],
+      "Crocus": ["Doktor", "Devil Fruit yok"],
+      "Van Augur": ["Devil Fruit kullanıcısı", "Ödülü var"],
+      "Doc Q": ["Ödülü var", "Devil Fruit yok"],
+      "Avalo Pizarro": ["Ödülü var", "Devil Fruit yok"],
+      "Sanjuan Wolf": ["Ödülü var", "Dev ırkı"],
+      "Catarina Devon": ["Kadın karakter", "Devil Fruit kullanıcısı"],
+      "Dorry": ["Dev ırkı", "Devil Fruit yok"],
+      "Brogy": ["Dev ırkı", "Devil Fruit yok"],
+      "Bepo": ["Mink", "Devil Fruit yok"],
+      "Penguin": ["Devil Fruit yok", "Kalp Korsanları"],
+      "Shachi": ["Devil Fruit yok", "Kalp Korsanları"],
+      "Portgas D. Rouge": ["Kadın karakter"],
+      "Kaya": ["Kadın karakter", "Devil Fruit yok"],
+      "Shiki": ["Devil Fruit kullanıcısı"],
+      "Shakky": ["Kadın karakter"],
+      "Donquixote Rosinante": ["Devil Fruit kullanıcısı", "Donquixote Ailesi"],
+      "Magellan": ["Devil Fruit kullanıcısı", "Paramecia tipi"],
+      "Hajrudin": ["Dev ırkı", "Devil Fruit yok"],
+      "Don Chinjao": ["Haki kullanabiliyor", "Ödülü var"],
+      "Jaguar D. Saul": ["Dev ırkı", "Devil Fruit yok"]
+    };
+
+    const CHARACTERS = Object.keys(CHARACTER_DATA);
+    const CHAR_GROUP = {"Monkey D. Luffy": "Saman Hasır Korsanları", "Roronoa Zoro": "Saman Hasır Korsanları", "Nami": "Saman Hasır Korsanları", "Usopp": "Saman Hasır Korsanları", "Sanji": "Saman Hasır Korsanları", "Tony Tony Chopper": "Saman Hasır Korsanları", "Nico Robin": "Saman Hasır Korsanları", "Franky": "Saman Hasır Korsanları", "Brook": "Saman Hasır Korsanları", "Jinbe": "Saman Hasır Korsanları", "Portgas D. Ace": "Beyaz Sakal Korsanları", "Edward Newgate": "Beyaz Sakal Korsanları", "Marco": "Beyaz Sakal Korsanları", "Vista": "Beyaz Sakal Korsanları", "Jozu": "Beyaz Sakal Korsanları", "Izo": "Beyaz Sakal Korsanları", "Thatch": "Beyaz Sakal Korsanları", "Rakuyo": "Beyaz Sakal Korsanları", "Namur": "Beyaz Sakal Korsanları", "Sabo": "Devrimci Ordu", "Monkey D. Dragon": "Devrimci Ordu", "Emporio Ivankov": "Devrimci Ordu", "Koala": "Devrimci Ordu", "Hack": "Devrimci Ordu", "Morley": "Devrimci Ordu", "Belo Betty": "Devrimci Ordu", "Shanks": "Kızıl Saçlı Korsanlar", "Benn Beckman": "Kızıl Saçlı Korsanlar", "Yasopp": "Kızıl Saçlı Korsanlar", "Lucky Roo": "Kızıl Saçlı Korsanlar", "Gol D. Roger": "Roger Korsanları", "Silvers Rayleigh": "Roger Korsanları", "Scopper Gaban": "Roger Korsanları", "Crocus": "Roger Korsanları", "Buggy": "Eski Yedi Büyük Korsan", "Dracule Mihawk": "Eski Yedi Büyük Korsan", "Boa Hancock": "Eski Yedi Büyük Korsan", "Bartholomew Kuma": "Eski Yedi Büyük Korsan", "Gecko Moria": "Eski Yedi Büyük Korsan", "Trafalgar Law": "En Kötü Nesil", "Eustass Kid": "En Kötü Nesil", "Killer": "En Kötü Nesil", "X Drake": "En Kötü Nesil", "Basil Hawkins": "En Kötü Nesil", "Jewelry Bonney": "En Kötü Nesil", "Capone Bege": "En Kötü Nesil", "Scratchmen Apoo": "En Kötü Nesil", "Urouge": "En Kötü Nesil", "Bepo": "En Kötü Nesil", "Penguin": "En Kötü Nesil", "Shachi": "En Kötü Nesil", "Marshall D. Teach": "Karasakal Korsanları", "Shiryu": "Karasakal Korsanları", "Jesus Burgess": "Karasakal Korsanları", "Van Augur": "Karasakal Korsanları", "Doc Q": "Karasakal Korsanları", "Avalo Pizarro": "Karasakal Korsanları", "Sanjuan Wolf": "Karasakal Korsanları", "Catarina Devon": "Karasakal Korsanları", "Kaido": "Kaido'nun Mürettebatı", "King": "Kaido'nun Mürettebatı", "Queen": "Kaido'nun Mürettebatı", "Jack": "Kaido'nun Mürettebatı", "Yamato": "Kaido'nun Mürettebatı", "Ulti": "Kaido'nun Mürettebatı", "Page One": "Kaido'nun Mürettebatı", "Black Maria": "Kaido'nun Mürettebatı", "Sasaki": "Kaido'nun Mürettebatı", "Who's-Who": "Kaido'nun Mürettebatı", "Charlotte Linlin": "Big Mom Korsanları", "Charlotte Katakuri": "Big Mom Korsanları", "Charlotte Smoothie": "Big Mom Korsanları", "Charlotte Cracker": "Big Mom Korsanları", "Charlotte Perospero": "Big Mom Korsanları", "Charlotte Pudding": "Big Mom Korsanları", "Charlotte Brulee": "Big Mom Korsanları", "Charlotte Oven": "Big Mom Korsanları", "Charlotte Opera": "Big Mom Korsanları", "Pekoms": "Big Mom Korsanları", "Donquixote Doflamingo": "Donquixote Ailesi", "Trebol": "Donquixote Ailesi", "Diamante": "Donquixote Ailesi", "Pica": "Donquixote Ailesi", "Vergo": "Donquixote Ailesi", "Sugar": "Donquixote Ailesi", "Donquixote Rosinante": "Donquixote Ailesi", "Buffalo": "Donquixote Ailesi", "Dellinger": "Donquixote Ailesi", "Lao G": "Donquixote Ailesi", "Senor Pink": "Donquixote Ailesi", "Gladius": "Donquixote Ailesi", "Jora": "Donquixote Ailesi", "Machvise": "Donquixote Ailesi", "Baby 5": "Donquixote Ailesi", "Crocodile": "Baroque Works", "Daz Bones": "Baroque Works", "Bentham": "Baroque Works", "Galdino": "Baroque Works", "Miss Doublefinger": "Baroque Works", "Miss Goldenweek": "Baroque Works", "Mr. 5": "Baroque Works", "Miss Valentine": "Baroque Works", "Monkey D. Garp": "Deniz Kuvvetleri", "Sengoku": "Deniz Kuvvetleri", "Sakazuki": "Deniz Kuvvetleri", "Borsalino": "Deniz Kuvvetleri", "Kuzan": "Deniz Kuvvetleri", "Issho": "Deniz Kuvvetleri", "Smoker": "Deniz Kuvvetleri", "Tashigi": "Deniz Kuvvetleri", "Koby": "Deniz Kuvvetleri", "Helmeppo": "Deniz Kuvvetleri", "Hina": "Deniz Kuvvetleri", "Tsuru": "Deniz Kuvvetleri", "Sentomaru": "Deniz Kuvvetleri", "Aramaki": "Deniz Kuvvetleri", "Momonga": "Deniz Kuvvetleri", "Axe-Hand Morgan": "Deniz Kuvvetleri", "Bellemere": "Deniz Kuvvetleri", "Rob Lucci": "Dünya Hükümeti (CP)", "Kaku": "Dünya Hükümeti (CP)", "Blueno": "Dünya Hükümeti (CP)", "Kalifa": "Dünya Hükümeti (CP)", "Jabra": "Dünya Hükümeti (CP)", "Spandam": "Dünya Hükümeti (CP)", "Kozuki Oden": "Wano Ülkesi", "Kozuki Momonosuke": "Wano Ülkesi", "Kin'emon": "Wano Ülkesi", "Kikunojo": "Wano Ülkesi", "Kozuki Hiyori": "Wano Ülkesi", "Raizo": "Wano Ülkesi", "Denjiro": "Wano Ülkesi", "Kurozumi Orochi": "Wano Ülkesi", "Kurozumi Kanjuro": "Wano Ülkesi", "Tama": "Wano Ülkesi", "Kozuki Toki": "Wano Ülkesi", "Hyogoro": "Wano Ülkesi", "Ashura Doji": "Wano Ülkesi", "Ryuma": "Wano Ülkesi", "Inuarashi": "Mink Kabilesi", "Nekomamushi": "Mink Kabilesi", "Carrot": "Mink Kabilesi", "Pedro": "Mink Kabilesi", "Vivi": "Alabasta Krallığı", "Nefertari Cobra": "Alabasta Krallığı", "Pell": "Alabasta Krallığı", "Chaka": "Alabasta Krallığı", "Vinsmoke Judge": "Germa 66", "Vinsmoke Reiju": "Germa 66", "Vinsmoke Ichiji": "Germa 66", "Vinsmoke Niji": "Germa 66", "Vinsmoke Yonji": "Germa 66", "Arlong": "Arlong Korsanları", "Hatchan": "Arlong Korsanları", "Kuroobi": "Arlong Korsanları", "Chew": "Arlong Korsanları", "Hody Jones": "Balıkadam Adası", "Shirahoshi": "Balıkadam Adası", "Fisher Tiger": "Balıkadam Adası", "King Neptune": "Balıkadam Adası", "Otohime": "Balıkadam Adası", "Vander Decken IX": "Balıkadam Adası", "Hammond": "Balıkadam Adası", "Dorry": "Dev ırkı", "Brogy": "Dev ırkı", "Hajrudin": "Dev ırkı", "Jaguar D. Saul": "Dev ırkı", "Enel": "Skypiea", "Wyper": "Skypiea", "Gan Fall": "Skypiea", "Absalom": "Thriller Bark", "Dr. Hogback": "Thriller Bark", "Perona": "Thriller Bark", "Kuro": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Don Krieg": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Gin": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Alvida": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Bellamy": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Foxy": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Wapol": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Red-Leg Zeff": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Nojiko": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Kaya": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Dr. Hiriluk": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Dr. Kureha": "İlk sagalar (Doğu Mavi / Grand Line başı)", "Caesar Clown": "Punk Hazard", "Monet": "Punk Hazard", "Rebecca": "Dressrosa", "Kyros": "Dressrosa", "Viola": "Dressrosa", "Bartolomeo": "Dressrosa", "Cavendish": "Dressrosa", "Don Chinjao": "Dressrosa", "Dr. Vegapunk": "Egghead / Bilim insanları", "Boa Marigold": "Amazon Lily (Kuja)", "Boa Sandersonia": "Amazon Lily (Kuja)", "Magellan": "Impel Down", "Shakky": "Kuja Korsanları (eski üye)", "Portgas D. Rouge": "Roger Korsanları ile bağlantılı", "Shiki": "Altın Aslan Korsanları"};
+    const FEMALE_EXTRA = ["Nami", "Nico Robin", "Boa Hancock", "Charlotte Linlin", "Charlotte Smoothie", "Sugar", "Vivi", "Perona", "Shirahoshi", "Jewelry Bonney", "Carrot", "Kikunojo", "Tashigi", "Hina", "Tsuru", "Kalifa", "Alvida", "Dr. Kureha", "Nojiko", "Bellemere", "Miss Doublefinger", "Miss Goldenweek", "Miss Valentine", "Boa Marigold", "Boa Sandersonia", "Otohime", "Monet", "Rebecca", "Viola", "Baby 5", "Jora", "Charlotte Pudding", "Charlotte Brulee", "Vinsmoke Reiju", "Kozuki Hiyori", "Tama", "Ulti", "Black Maria", "Kozuki Toki", "Koala", "Belo Betty", "Catarina Devon", "Portgas D. Rouge", "Kaya", "Shakky", "Yamato"];
+
+    let lobbyChannel = null, gameChannel = null;
+    let myId = crypto.randomUUID(), myName = '', roomCode = '', isHost = false;
+    let players = {}, gameState = 'lobby', spyId = null;
+    let mode = 'spy', AS = null;
+    let denDuration = 30, denStyle = 'voice', D = null, myDenCharacter = '', denTimerHandle = null, denLocalCooldownUntil = 0, denFeedback = ''; 
+    let curCharacter = '', spyIds = [], announced = 1, wrongGuesses = new Set(), voteSel = [];
+    const modeName = m => m === 'den' ? 'Den Den Mushi: Gizli Mesaj' : m === 'bounty' ? 'Ödül Avcısı' : m === 'secret' ? 'Secret Nakama Müzayedesi' : m === 'auction' ? 'Nakama Müzayedesi' : 'Casusu Bul';
+    const isAucMode = m => m === 'auction' || m === 'secret';
+
+    // ========== KARAKTER GÖRSELLERİ (otomatik) ==========
+    const imgUrl = {}, imgCache = {};
+    const WIKI = 'https://onepiece.fandom.com';
+    const IMG_ALIAS = { 'Dr. Vegapunk': 'Vegapunk', 'King Neptune': 'Neptune', 'Red-Leg Zeff': 'Zeff', 'Axe-Hand Morgan': 'Morgan',
+      'Dr. Kureha': 'Kureha', 'Dr. Hiriluk': 'Hiriluk', 'Dr. Hogback': 'Hogback', 'Aramaki': 'Ryokugyu', 'Senor Pink': 'Señor Pink' };
+    async function jget(u) { const r = await fetch(u); if (!r.ok) throw new Error(r.status); return r.json(); }
+    async function findImage(name) {
+      const t = IMG_ALIAS[name] || name;
+      // 1) One Piece Wiki: sayfanın ana (infobox) görseli = en bilinen görsel
+      try {
+        const d = await jget(`${WIKI}/api.php?action=query&prop=pageimages&piprop=thumbnail&pithumbsize=400&redirects=1&format=json&origin=*&titles=${encodeURIComponent(t)}`);
+        const pg = Object.values(d.query.pages)[0];
+        if (pg && pg.thumbnail && pg.thumbnail.source) return pg.thumbnail.source;
+      } catch (e) {}
+      // 2) Fandom Articles/Details
+      try {
+        const d = await jget(`${WIKI}/api/v1/Articles/Details?abstract=0&width=400&height=400&titles=${encodeURIComponent(t)}`);
+        const it = Object.values(d.items || {})[0];
+        if (it && it.thumbnail) return it.thumbnail;
+      } catch (e) {}
+      // 3) MyAnimeList (Jikan): en çok favorilenen eşleşme
+      try {
+        const d = await jget(`https://api.jikan.moe/v4/characters?q=${encodeURIComponent(name)}&order_by=favorites&sort=desc&limit=3`);
+        const toks = name.toLowerCase().split(/[\s.]+/).filter(x => x.length > 3);
+        const hit = (d.data || []).find(c => toks.some(x => c.name.toLowerCase().includes(x)));
+        if (hit && hit.images && hit.images.jpg) return hit.images.jpg.image_url;
+      } catch (e) {}
+      return null;
+    }
+    function getCharImg(name) {
+      if (!imgCache[name]) imgCache[name] = findImage(name).then(u => { imgUrl[name] = u; return u; });
+      return imgCache[name];
+    }
+    function charImgHtml(name, size = false) {
+      const e = String(name).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const u = imgUrl[name], cls = size === 'md' ? 'char-img-box md' : size ? 'char-img-box sm' : 'char-img-box';
+      if (u) return `<div class="${cls}"><img class="char-img" src="${u.replace(/&/g, '&amp;')}" alt="${e}" referrerpolicy="no-referrer" onerror="this.parentNode.innerHTML='<div class=char-img-ph>🏴‍☠️</div>'"></div>`;
+      if (u === null) return `<div class="${cls}"><div class="char-img-ph">🏴‍☠️</div></div>`;
+      return `<div class="${cls}" data-name="${e}" data-sm="${size === 'md' ? 'md' : size ? 1 : 0}"><div class="char-img-ph">⏳</div></div>`;
+    }
+    function hydrateImgs(root) {
+      root.querySelectorAll('.char-img-box[data-name]').forEach(b => {
+        const n = b.dataset.name;
+        getCharImg(n).then(() => { if (b.isConnected) b.outerHTML = charImgHtml(n, b.dataset.sm === 'md' ? 'md' : b.dataset.sm === '1'); });
+      });
+    }
+
+    let voteStartCount = 0, votedPlayers = new Set(), myVote = null, votes = {};
+    let activeRooms = {};
+
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      // Presence listesinde görünen odalarla çakışmayı önle; gerçek atomik benzersizlik için backend gerekir.
+      do {
+        code = '';
+        for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      } while (Object.prototype.hasOwnProperty.call(activeRooms, code));
+      return code;
+    }
+    function majorityNeeded(n) { return Math.floor(n / 2) + 1; }
+    function show(id) {
+      ['lobby','room','game','auction','bounty','den'].forEach(s => document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.body.classList.toggle('lobby-mode', id === 'lobby');
+      document.body.classList.remove('scene-treasure','scene-bounty','scene-secret','scene-plain');
+      if (id === 'bounty') document.body.classList.add('scene-bounty');
+      else if (id === 'auction') document.body.classList.add('scene-treasure');
+      else if (id === 'game' && mode === 'secret') document.body.classList.add('scene-secret');
+      else if (id !== 'lobby') document.body.classList.add('scene-plain');
+    }
+
+    function broadcast(event, payload) {
+      if (!gameChannel) return;
+      gameChannel.send({ type: 'broadcast', event, payload: { ...payload, from: myId } });
+    }
+    function isHostSender(payload) {
+      return !!payload?.from && !!players[payload.from]?.isHost;
+    }
+
+    function updatePlayerList() {
+      const ul = document.getElementById('playerList');
+      ul.innerHTML = '';
+      const ids = Object.keys(players);
+      ids.forEach(id => {
+        const p = players[id];
+        const li = document.createElement('li');
+        li.textContent = p.name + (id === myId ? ' (Sen)' : '');
+        if (p.isHost) li.classList.add('host');
+        ul.appendChild(li);
+      });
+      const btnStart = document.getElementById('btnStart');
+      const minP = (isAucMode(mode) || mode === 'den') ? 2 : 3, maxP = 8;
+      document.getElementById('roomModeLabel').textContent = `Mod: ${modeName(mode)} • Mürettebat (${minP}-${maxP} kişi${isAucMode(mode) ? ', ilk 2 kişi oynar, diğerleri izler' : ''}):`;
+      if (isHost && ids.length >= minP && ids.length <= maxP) btnStart.classList.remove('hidden');
+      else btnStart.classList.add('hidden');
+      document.getElementById('roomStatus').textContent =
+        ids.length < minP ? `En az ${minP} kişi gerekli (${ids.length}/${minP})` :
+        ids.length > maxP ? `Maksimum ${maxP} kişi!` : 'Kaptan oyunu başlatabilir.';
+
+      if (isHost && lobbyChannel) {
+        lobbyChannel.track({ id: myId, name: myName, roomCode, playerCount: ids.length, isHost: true, mode, denDuration, denStyle });
+      }
+    }
+
+    function updateRoomList() {
+      const ul = document.getElementById('roomList');
+      const codes = Object.keys(activeRooms);
+      if (codes.length === 0) {
+        ul.innerHTML = '<li class="empty-rooms">Şu an aktif oda yok.<br>Bir tane oluştur, nakamalarını çağır!</li>';
+        return;
+      }
+      ul.innerHTML = '';
+      codes.forEach(code => {
+        const r = activeRooms[code];
+        const li = document.createElement('li');
+        li.innerHTML = `<div><div class="room-code">${auEsc(code)}</div><div class="room-meta">${auEsc(r.hostName)} • ${Number(r.playerCount) || 1} oyuncu • ${auEsc(modeName(r.mode))}</div></div>
+          <button class="secondary" style="width:auto;padding:6px 12px;margin:0;font-size:0.8rem;">Katıl</button>`;
+        li.onclick = () => joinRoom(code);
+        ul.appendChild(li);
+      });
+    }
+
+    async function initLobby() {
+      lobbyChannel = supabaseClient.channel('domi:lobby', { config: { presence: { key: myId } } });
+      lobbyChannel.on('presence', { event: 'sync' }, () => {
+        const state = lobbyChannel.presenceState();
+        activeRooms = {};
+        Object.values(state).forEach(arr => {
+          arr.forEach(p => {
+            if (p.roomCode && p.isHost) {
+              activeRooms[p.roomCode] = { hostName: p.name, playerCount: p.playerCount || 1, hostId: p.id, mode: p.mode || 'spy' };
+            }
+          });
+        });
+        updateRoomList();
+      }).subscribe();
+    }
+
+    async function joinRoom(code, asHost = false) {
+      myName = document.getElementById('playerName').value.trim();
+      if (!myName) { alert('Önce korsan adını yaz!'); return; }
+
+      roomCode = code.toUpperCase();
+      isHost = asHost;
+      if (gameChannel) await gameChannel.unsubscribe();
+
+      gameChannel = supabaseClient.channel(`domi:room:${roomCode}`, {
+        config: { presence: { key: myId }, broadcast: { self: true } }
+      });
+
+      gameChannel
+        .on('presence', { event: 'sync' }, () => {
+          const state = gameChannel.presenceState();
+          players = {};
+          Object.values(state).forEach(arr => {
+            arr.forEach(p => { players[p.id] = { name: p.name, isHost: p.isHost }; if (p.isHost && p.mode) { mode = p.mode; if (p.denDuration) denDuration = Number(p.denDuration) || 30; if (p.denStyle) denStyle = p.denStyle; } });
+          });
+          updatePlayerList();
+          if (gameState === 'voting' && Object.keys(players).length && Object.keys(players).every(id => Object.prototype.hasOwnProperty.call(votes, id))) revealResult();
+        })
+        .on('broadcast', { event: 'game_start' }, ({ payload }) => { if (isHostSender(payload)) handleGameStart(payload); })
+        .on('broadcast', { event: 'spy_guess' }, ({ payload }) => handleSpyGuess(payload))
+        .on('broadcast', { event: 'au_state' }, ({ payload }) => { if (isHost || !isHostSender(payload) || !payload.AS) return; AS = payload.AS; auRender(); })
+        .on('broadcast', { event: 'au_act' }, ({ payload }) => { if (isHost && AS) { const p = AS.ids.indexOf(payload.from); if (p >= 0) auApply(p, payload.a); } })
+        .on('broadcast', { event: 'au_need' }, () => { if (isHost && AS) auPush(); })
+        .on('broadcast', { event: 'bounty_state' }, ({ payload }) => { if (isHost || !isHostSender(payload) || !payload.state) return; B = payload.state; bountyRender(); })
+        .on('broadcast', { event: 'bounty_private' }, ({ payload }) => { if (payload.targetId === myId) { if (payload.character) myBountyCharacter = payload.character; if (payload.guessMessage) myBountyGuessMessage = payload.guessMessage; bountyRender(); } })
+        .on('broadcast', { event: 'bounty_action' }, ({ payload }) => { if (isHost && B && payload?.action) bountyApply(payload.from, payload.action); })
+        .on('broadcast', { event: 'den_state' }, ({ payload }) => { if (isHost || !isHostSender(payload) || !payload.state) return; const previous = D; D = payload.state; denDuration = Number(D.duration) || denDuration; denStyle = D.style || denStyle; const emojiClockOnly = D.style === 'emoji' && previous && previous.style === 'emoji' && previous.phase === D.phase && previous.emojiActiveIndex === D.emojiActiveIndex && JSON.stringify(previous.emojiSlots || []) === JSON.stringify(D.emojiSlots || []) && previous.remaining !== D.remaining; if (emojiClockOnly) denUpdateClock(); else denRender(); })
+        .on('broadcast', { event: 'den_private' }, ({ payload }) => { if (payload?.targetId !== myId) return; if (payload.character) myDenCharacter = payload.character; if (payload.message) { denFeedback = payload.message; if (payload.cooldown) denLocalCooldownUntil = Date.now() + payload.cooldown; } denRender(); })
+        .on('broadcast', { event: 'den_action' }, ({ payload }) => { if (isHost && D && payload?.action) denApply(payload.from, payload.action); })
+        .on('broadcast', { event: 'den_draw_line' }, ({ payload }) => { if (payload?.roomCode === roomCode && !isHost && payload.line) { D?.drawStrokes?.push(payload.line); denDrawSegment(payload.line, false); } })
+        .on('broadcast', { event: 'den_draw_clear' }, ({ payload }) => { if (payload?.roomCode === roomCode) { if(!isHost && D) D.drawStrokes=[]; denClearCanvas(false); } })
+        .on('broadcast', { event: 'den_need' }, ({ payload }) => { if (isHost && D) { denPush(); if (D.phase === 'playing' && D.narratorId === payload?.from) broadcast('den_private', { targetId: D.narratorId, character: D.character }); } })
+        .on('broadcast', { event: 'vote_start_press' }, ({ payload }) => handleVoteStartPress(payload))
+        .on('broadcast', { event: 'vote_cast' }, ({ payload }) => handleVoteCast(payload))
+        .on('broadcast', { event: 'new_round' }, ({ payload }) => {
+          if (!isHostSender(payload)) return;
+          gameState = 'room';
+          show('room');
+          document.getElementById('roomStatus').textContent = 'Yeni tur için kaptan başlatabilir.';
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await gameChannel.track({ id: myId, name: myName, isHost, mode, denDuration, denStyle });
+            if (!isHost) { broadcast('au_need', {}); broadcast('den_need', {}); }
+            if (isHost && lobbyChannel) {
+              await lobbyChannel.track({ id: myId, name: myName, roomCode, playerCount: 1, isHost: true, mode, denDuration, denStyle });
+            }
+            document.getElementById('roomCodeDisplay').textContent = roomCode;
+            show('room');
+          }
+        });
+    }
+
+    // Secret Nakama için ayrı, kategorili ipucu sistemi. Ödüller manga/anime içinde
+    // açıklanmış güncel değerlerdir; listede kesin değeri bulunmayan karakterlerde aralık uydurulmaz.
+    const SECRET_BOUNTIES = {
+      "Monkey D. Luffy":3000000000,"Roronoa Zoro":1111000000,"Nami":366000000,"Usopp":500000000,"Sanji":1032000000,
+      "Tony Tony Chopper":1000,"Nico Robin":930000000,"Franky":394000000,"Brook":383000000,"Jinbe":1100000000,
+      "Portgas D. Ace":550000000,"Edward Newgate":5046000000,"Marco":1374000000,"Shanks":4048900000,"Benn Beckman":0,
+      "Gol D. Roger":5564800000,"Silvers Rayleigh":0,"Buggy":3189000000,"Dracule Mihawk":3590000000,"Boa Hancock":1659000000,
+      "Trafalgar Law":3000000000,"Eustass Kid":3000000000,"Marshall D. Teach":3996000000,"Kaido":4611100000,
+      "Charlotte Linlin":4388000000,"Charlotte Katakuri":1057000000,"King":1390000000,"Queen":1320000000,"Jack":1000000000,
+      "Nico Robin":930000000,"Crocodile":1965000000,"Doflamingo":340000000,"Donquixote Doflamingo":340000000,
+      "Sabo":602000000,"God Usopp":500000000,"Black Maria":480000000,"Who's-Who":546000000,"Ulti":400000000,
+      "Franky":394000000,"Brook":383000000,"Pedro":382000000,"Nami":366000000,"Capone Bege":350000000,
+      "Scratchmen Apoo":350000000,"Gecko Moria":320000000,"Basil Hawkins":320000000,"Jewelry Bonney":320000000,
+      "Caesar Clown":300000000,"Bartholomew Kuma":296000000,"Arlong":20000000,"Koby":5000000,"Smoker":0
+    };
+    function secretHintCategories(character) {
+      const raw = CHARACTER_DATA[character] || [];
+      const group = CHAR_GROUP[character] || '';
+      const categories = [];
+
+      // Yalnızca kaynak veride karşılığı olan bilgileri ipucu olarak kullan.
+      let affiliation = '';
+      if (/Deniz Kuvvetleri|Denizci|Amiral|Marine/i.test(group)) affiliation = 'Denizci / Deniz Kuvvetleri';
+      else if (/Dünya Hükümeti|CP/i.test(group)) affiliation = 'Dünya Hükümeti ile bağlantılı';
+      else if (/Devrimci Ordu/i.test(group)) affiliation = 'Devrimci Ordu ile bağlantılı';
+      else if (/Korsan|Mürettebat|En Kötü Nesil|Eski Yedi Büyük Korsan|Baroque Works|Donquixote Ailesi/i.test(group)) affiliation = 'Bir korsan tayfası veya korsan örgütüyle bağlantılı';
+      if (affiliation) categories.push({ key:'affiliation', label:'Tayfa / Bağlantı', value:affiliation });
+
+      const bounty = SECRET_BOUNTIES[character];
+      if (Number.isFinite(bounty)) {
+        const bountyHint = bounty < 500000000 ? '0–500 milyon Berry' : bounty < 1000000000 ? '500 milyon–1 milyar Berry' : '1 milyar Berry veya üzeri';
+        categories.push({ key:'bounty', label:'Ödül', value:bountyHint });
+      }
+
+      const fruit = raw.some(x => /Devil Fruit kullanıcısı|Meyve kullanıcısı|Şeytan Meyvesi kullanıcısı/i.test(x));
+      const noFruit = raw.some(x => /Devil Fruit yok|Şeytan Meyvesi yok/i.test(x));
+      const haki = raw.some(x => /Haki kullanabiliyor|Haki kullanıcısı/i.test(x));
+      // Meyve + Haki tek bir kategori sayılır. İkisinden biri bilinmiyorsa
+      // eksik bilgiyle ipucu üretme; diğer bilinen kategorilerden seçim yapılsın.
+      if ((fruit || noFruit) && haki) {
+        categories.push({ key:'ability', label:'Meyve / Haki', value: fruit ? 'Şeytan Meyvesi var; Haki kullanabiliyor' : 'Şeytan Meyvesi yok; Haki kullanabiliyor' });
+      }
+
+      return categories;
+    }
+    function buildHints(character) {
+      // Diğer modların eski ipucu davranışı aynen korunur.
+      if (mode === 'secret') {
+        const categories = auShuffle(secretHintCategories(character));
+        // Bilinmeyen ödül/Haki verisi ipucu olarak gösterilmez. Bunun yerine
+        // karakter için doğrulanabilir başka kategori(ler) seçilir.
+        // Secret Nakama'da yalnızca TEK kategori gösterilir. Meyve + Haki
+        // birleşimi yukarıda tek kategori olarak tanımlıdır.
+        return categories.slice(0, 1).map(c => `${c.label}: ${c.value}`);
+      }
+      const raw = CHARACTER_DATA[character] || [];
+      const pool = [...new Set(raw.filter(t => !/^(Kadın karakter|Erkek karakter|Bilinmiyor|Diğer)$/i.test(t) && !/(Korsanları|Korsanlar|Mürettebatı|Ailesi|Baroque Works|Germa 66|Devrimci Ordu|Deniz Kuvvetleri|Dünya Hükümeti|Kaido'nun adamı|Kalp Korsanları|Kuja)/i.test(t)))];
+      const group = CHAR_GROUP[character] || '';
+      let broadGroup = '';
+      if (/Korsan|Mürettebat|Baroque Works|Eski Yedi Büyük Korsan|En Kötü Nesil/i.test(group)) broadGroup = 'Korsanlarla bağlantılı';
+      else if (/Deniz Kuvvetleri|Dünya Hükümeti|CP/i.test(group)) broadGroup = 'Dünya düzeniyle bağlantılı';
+      else if (/Wano|Alabasta|Dressrosa|Skypiea|Punk Hazard|Egghead|Amazon Lily|Balıkadam Adası|Thriller Bark/i.test(group)) broadGroup = 'Belirli bir ada veya ülkeyle bağlantılı';
+      else if (/Devrimci Ordu/i.test(group)) broadGroup = 'Dünya düzenine karşı olanlarla bağlantılı';
+      else if (/Germa/i.test(group)) broadGroup = 'Bilim ve teknolojiyle bağlantılı';
+      if (broadGroup && !pool.includes(broadGroup)) pool.push(broadGroup);
+      const qualityFallbacks = ['One Piece dünyasında önemli bir olayla bağlantılı', 'Karakterin geçmişi hikâyede rol oynar', 'Bir ada veya büyük çatışmayla bağlantılı'];
+      qualityFallbacks.forEach(clue => { if (pool.length < 2 && !pool.includes(clue)) pool.push(clue); });
+      return auShuffle(pool).slice(0, Math.min(3, pool.length));
+    }
+
+    function handleGameStart(payload) {
+      curCharacter = payload.character; spyIds = payload.spyIds || []; announced = payload.announced || 1;
+      voteStartCount = 0; votedPlayers = new Set(); votes = {}; myVote = null; wrongGuesses = new Set(); voteSel = [];
+
+      const isSpy = spyIds.includes(myId);
+      const roleBox = document.getElementById('roleBox');
+      const roleLabel = document.getElementById('roleLabel');
+      const roleText = document.getElementById('roleText');
+      const countTxt = announced > 1 ? `Bu turda ${announced} casus var!` : 'Bu turda 1 casus var.';
+
+      if (isSpy) {
+        roleBox.classList.add('spy');
+        roleLabel.textContent = 'CASUS';
+        roleLabel.style.background = 'var(--pirate-red)';
+        roleLabel.style.color = '#fff';
+        document.getElementById('roleImg').innerHTML = '';
+        roleText.innerHTML = (payload.hints && payload.hints[myId] || []).map(h => '• ' + auEsc(h)).join('<br>');
+        roleText.style.fontSize = '1.15rem'; roleText.style.lineHeight = '1.7';
+        document.getElementById('roleSub').textContent = `Sen CASUSSUN! ${countTxt} ${announced > 1 ? 'Diğer casusun kim olduğunu bilmiyorsun. ' : ''}Bu ipuçlarıyla uydur, yakalanırsan karakteri bilirsen yine kazanırsın.`;
+      } else {
+        roleBox.classList.remove('spy');
+        roleLabel.textContent = 'KARAKTER';
+        roleLabel.style.background = 'var(--straw-dark)';
+        roleLabel.style.color = '#1a1200';
+        const ri = document.getElementById('roleImg'); ri.innerHTML = charImgHtml(payload.character); hydrateImgs(ri);
+        roleText.textContent = payload.character;
+        roleText.style.fontSize = ''; roleText.style.lineHeight = '';
+        document.getElementById('roleSub').textContent = `Herkes aynı karakteri biliyor. ${countTxt} Casusu bul!`;
+      }
+
+      document.getElementById('notes').value = '';
+      document.getElementById('votingArea').classList.add('hidden');
+      document.getElementById('resultArea').classList.add('hidden');
+      document.getElementById('guessArea').classList.add('hidden');
+      document.getElementById('btnNewRound').classList.add('hidden');
+      document.getElementById('btnVoteStart').disabled = false;
+      document.getElementById('btnVoteStart').textContent = 'Oylama Başlat';
+      document.getElementById('voteCounter').textContent = `Oylama Başlat: 0 / ${majorityNeeded(Object.keys(players).length)}`;
+      show('game');
+      gameState = 'game';
+    }
+
+    function handleVoteStartPress(payload) {
+      if (gameState !== 'game' || !payload?.from || !Object.prototype.hasOwnProperty.call(players, payload.from)) return;
+      votedPlayers.add(payload.from);
+      voteStartCount = votedPlayers.size;
+      const needed = majorityNeeded(Object.keys(players).length);
+      document.getElementById('voteCounter').textContent = `Oylama Başlat: ${voteStartCount} / ${needed}`;
+      if (voteStartCount >= needed) startVoting();
+    }
+
+    function startVoting() {
+      gameState = 'voting';
+      voteSel = [];
+      document.getElementById('btnVoteStart').disabled = true;
+      document.getElementById('btnVoteStart').textContent = 'Oylama başladı!';
+      document.getElementById('votingArea').classList.remove('hidden');
+      const opts = document.getElementById('voteOptions');
+      opts.innerHTML = '';
+      const need = announced;
+      const submit = document.createElement('button');
+      submit.className = 'success';
+      const refresh = () => {
+        submit.textContent = `Oyu Gönder (${voteSel.length}/${need})`;
+        submit.disabled = voteSel.length !== need;
+      };
+      Object.entries(players).forEach(([id, p]) => {
+        if (id === myId) return;
+        const btn = document.createElement('button');
+        btn.textContent = p.name;
+        btn.onclick = () => {
+          if (need === 1) { castVote([id]); return; }
+          const i = voteSel.indexOf(id);
+          if (i >= 0) { voteSel.splice(i, 1); btn.classList.remove('vote-sel'); }
+          else if (voteSel.length < need) { voteSel.push(id); btn.classList.add('vote-sel'); }
+          refresh();
+        };
+        opts.appendChild(btn);
+      });
+      if (need > 1) {
+        const hint = document.createElement('p');
+        hint.className = 'small'; hint.textContent = `${need} kişi seç:`;
+        opts.prepend(hint);
+        submit.onclick = () => castVote(voteSel.slice());
+        opts.appendChild(submit);
+        refresh();
+      }
+    }
+
+    function castVote(targets) {
+      if (myVote) return;
+      myVote = targets;
+      broadcast('vote_cast', { targets });
+      document.querySelectorAll('#voteOptions button').forEach(b => b.disabled = true);
+    }
+
+    function handleVoteCast(payload) {
+      if (gameState !== 'voting' || !payload?.from || !Object.prototype.hasOwnProperty.call(players, payload.from) || Object.prototype.hasOwnProperty.call(votes, payload.from)) return;
+      const targets = Array.isArray(payload.targets) ? payload.targets : (payload.targetId ? [payload.targetId] : []);
+      const validTargets = [...new Set(targets)].filter(id => id !== payload.from && Object.prototype.hasOwnProperty.call(players, id));
+      if (validTargets.length !== announced) return;
+      votes[payload.from] = validTargets;
+      const activeIds = Object.keys(players);
+      if (activeIds.every(id => Object.prototype.hasOwnProperty.call(votes, id))) revealResult();
+    }
+
+    // En çok oy alan k kişiyi bulur; k. ile (k+1). arasında net fark yoksa kimse yakalanmaz
+    function computeAccused(votesObj, k) {
+      const tally = {};
+      Object.values(votesObj).forEach(ts => ts.forEach(t => { tally[t] = (tally[t] || 0) + 1; }));
+      const ranked = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+      if (ranked.length < k) return [];
+      if (ranked.length > k && ranked[k][1] === ranked[k - 1][1]) return [];
+      return ranked.slice(0, k).map(x => x[0]);
+    }
+
+    function resultBox(cls, title, sub) {
+      document.getElementById('resultArea').classList.remove('hidden');
+      document.getElementById('resultArea').innerHTML = `<div class="result-box ${cls}">${title}<br><span class="small">${sub}</span></div>`;
+    }
+    function endRound() {
+      document.getElementById('guessArea').classList.add('hidden');
+      document.getElementById('btnNewRound').classList.remove('hidden');
+      document.getElementById('btnNewRound').disabled = !isHost;
+    }
+    const pname = id => auEsc(players[id]?.name || '?');
+
+    function revealResult() {
+      gameState = 'result';
+      const accused = computeAccused(votes, announced);
+      const accusedTxt = accused.length ? accused.map(pname).join(', ') : 'net bir sonuç çıkmadı';
+
+      if (spyIds.length === 0) {
+        resultBox('win', 'Bu turda casus YOKTU! 😈', `Suçlananlar: ${accusedTxt} — hepsi masumdu. Karakter: ${auEsc(curCharacter)}`);
+        endRound(); return;
+      }
+      const spyNames = spyIds.map(pname).join(', ');
+      const caught = spyIds.filter(id => accused.includes(id));
+      if (caught.length === spyIds.length) {
+        // Casus(lar) yakalandı: son şans, karakteri tahmin et
+        gameState = 'guess';
+        resultBox('win', `Casus${spyIds.length > 1 ? 'lar' : ''} yakalandı!`, `${spyNames}. Ama son bir şansı var: karakteri bilirse casus tarafı kazanır!`);
+        renderGuess();
+      } else {
+        resultBox('lose', spyIds.length > 1 && caught.length ? 'Bir casus kaçtı! Casus tarafı kazandı.' : 'Casus kaçtı! Casus tarafı kazandı.',
+          `Casus${spyIds.length > 1 ? 'lar' : ''}: ${spyNames} • Suçlananlar: ${accusedTxt} • Karakter: ${auEsc(curCharacter)}`);
+        endRound();
+      }
+    }
+
+    function renderGuess() {
+      const ga = document.getElementById('guessArea');
+      ga.classList.remove('hidden');
+      document.getElementById('btnNewRound').classList.add('hidden');
+      if (spyIds.includes(myId)) {
+        ga.innerHTML = `<p style="margin:12px 0 6px; font-weight:600; color:var(--straw);">Son şansın: Karakter kim?</p>
+          <input id="guessInput" list="charList" placeholder="Karakter adını yaz veya seç..." autocomplete="off">
+          <datalist id="charList">${CHARACTERS.map(c => `<option value="${auEsc(c)}">`).join('')}</datalist>
+          <button id="btnGuess" class="success">Tahmin Et</button>`;
+        document.getElementById('btnGuess').onclick = () => {
+          const g = document.getElementById('guessInput').value;
+          if (!g.trim()) return;
+          document.getElementById('btnGuess').disabled = true;
+          document.getElementById('guessInput').disabled = true;
+          broadcast('spy_guess', { guess: g });
+        };
+      } else {
+        ga.innerHTML = '<p class="small" style="margin-top:12px; text-align:center;">Casus son şansını kullanıyor, karakteri tahmin ediyor... 🤞</p>';
+      }
+    }
+
+    const normName = x => String(x || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    function handleSpyGuess(payload) {
+      if (gameState !== 'guess' || !spyIds.includes(payload.from)) return;
+      const spyNames = spyIds.map(pname).join(', ');
+      if (normName(payload.guess) === normName(curCharacter)) {
+        gameState = 'result';
+        resultBox('lose', `${pname(payload.from)} karakteri bildi! Casus tarafı kazandı. 🕵️`, `Karakter: ${auEsc(curCharacter)}`);
+        endRound();
+      } else {
+        wrongGuesses.add(payload.from);
+        if (wrongGuesses.size >= spyIds.length) {
+          gameState = 'result';
+          resultBox('win', 'Casus karakteri bilemedi! Halk kazandı. 🎉', `Casus: ${spyNames} • Gerçek karakter: ${auEsc(curCharacter)}`);
+          endRound();
+        }
+      }
+    }
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('modeSpy').classList.toggle('active', m === 'spy');
+      document.getElementById('modeAuc').classList.toggle('active', m === 'auction');
+      document.getElementById('modeSec').classList.toggle('active', m === 'secret');
+      document.getElementById('modeBounty').classList.toggle('active', m === 'bounty');
+      document.getElementById('modeDen').classList.toggle('active', m === 'den');
+      document.getElementById('denLobbySettings').classList.toggle('visible', m === 'den');
+      const status = document.getElementById('lobbyStatus');
+      status.textContent = m === 'bounty' ? 'Ödül Avcısı: 3–8 oyuncu • soru sor, cevap al ve tahmin et.' : m === 'den' ? 'Den Den Mushi: 2–8 oyuncu • herkes aynı anda tahmin eder.' : '';
+    }
+    document.getElementById('modeSpy').onclick = () => setMode('spy');
+    document.getElementById('modeAuc').onclick = () => setMode('auction');
+    document.getElementById('modeSec').onclick = () => setMode('secret');
+    document.getElementById('modeBounty').onclick = () => setMode('bounty');
+    document.getElementById('modeDen').onclick = () => setMode('den');
+    document.querySelectorAll('[data-den-duration]').forEach(btn => btn.onclick = () => { denDuration = Number(btn.dataset.denDuration) || 30; document.querySelectorAll('[data-den-duration]').forEach(b => b.classList.toggle('active', b === btn)); });
+
+    document.getElementById('btnCreate').onclick = async () => {
+      myName = document.getElementById('playerName').value.trim();
+      if (!myName) { alert('Korsan adını yaz!'); return; }
+      document.getElementById('lobbyStatus').textContent = 'Oda oluşturuluyor...';
+      await joinRoom(generateRoomCode(), true);
+    };
+    document.getElementById('btnJoinCode').onclick = async () => {
+      const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+      if (!code) { alert('Oda kodu girin'); return; }
+      document.getElementById('lobbyStatus').textContent = 'Katılıyor...';
+      await joinRoom(code, false);
+    };
+    document.getElementById('btnLeave').onclick = async () => {
+      // Odadan çıkarken presence kaydını da temizle; eski oda lobide takılı kalmasın.
+      try { if (gameChannel) await gameChannel.untrack(); } catch (e) {}
+      if (gameChannel) { try { await gameChannel.unsubscribe(); } catch (e) {} }
+      if (isHost && lobbyChannel) {
+        try { await lobbyChannel.track({ id: myId, name: myName, isHost: false, roomCode: '', playerCount: 0 }); } catch (e) {}
+      }
+      gameChannel = null; players = {}; isHost = false; roomCode = ''; AS = null; B = null; D = null; myDenCharacter = ''; denFeedback = ''; if (denTimerHandle) clearInterval(denTimerHandle); denTimerHandle = null;
+      myBountyCharacter = ''; votes = {}; myVote = null; voteSel = []; gameState = 'lobby';
+      document.getElementById('lobbyStatus').textContent = 'Yeni bir macera seçebilirsin.';
+      show('lobby');
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    };
+    document.getElementById('btnStart').onclick = () => {
+      if (!isHost) return;
+      if (isAucMode(mode)) { auStart(); return; }
+      if (mode === 'bounty') { bountyStart(); return; }
+      if (mode === 'den') { denStart(); return; }
+      // Güncel presence'tan oyuncu listesini al (önbellekteki players'a güvenme)
+      const live = [];
+      Object.values(gameChannel.presenceState()).forEach(arr => arr.forEach(p => { if (!live.includes(p.id)) live.push(p.id); }));
+      const ids = live.length ? live : Object.keys(players);
+      if (ids.length < 3 || ids.length > 8) return;
+      const character = CHARACTERS[auRnd(CHARACTERS.length)];
+      // 5+ kişide: %10 casussuz tur, %20 çift casus, kalanı tek casus
+      const n = ids.length, roll = auRnd(100);
+      let k = 1;
+      if (n >= 5) { if (roll < 10) k = 0; else if (roll < 30) k = 2; }
+      const chosen = auShuffle(ids).slice(0, k);
+      const hints = {};
+      chosen.forEach(id => { hints[id] = buildHints(character); });
+      // announced: oyunculara duyurulan casus sayısı (casussuz turda da 1 denir)
+      broadcast('game_start', { character, spyIds: chosen, announced: Math.max(k, 1), hints });
+    };
+    document.getElementById('btnVoteStart').onclick = () => {
+      if (gameState !== 'game') return;
+      broadcast('vote_start_press', {});
+    };
+    document.getElementById('btnNewRound').onclick = () => {
+      if (!isHost) return;
+      broadcast('new_round', {});
+    };
+
+    // ========== ÖDÜL AVCISI ==========
+    // Host keeps the assignment map locally; public state never contains unrevealed characters.
+    let B = null, myBountyCharacter = '', myBountyGuessMessage = '';
+    const bountyBerry = n => `${Number(n||0).toLocaleString('en-US')} Berry`;
+    const BOUNTY_WIN = 100000000, BOUNTY_WRONG = 10000000;
+    const bountyEsc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'": "&#39;"}[c]));
+    const bountyShuffle = arr => auShuffle(arr);
+    function bountyStart() {
+      const live = [];
+      Object.values(gameChannel.presenceState()).forEach(arr => arr.forEach(p => { if (p.id && !live.includes(p.id)) live.push(p.id); }));
+      const ids = live.length ? live : Object.keys(players);
+      if (ids.length < 3 || ids.length > 8) { alert('Ödül Avcısı için 3–8 oyuncu gerekli.'); return; }
+      const names = ids.map(id => players[id]?.name || (id === myId ? myName : 'Korsan'));
+      const picks = bountyShuffle(CHARACTERS).slice(0, ids.length);
+      const characters = Object.fromEntries(ids.map((id, i) => [id, picks[i]]));
+      B = { phase:'ask', ids, names:Object.fromEntries(ids.map((id,i)=>[id,names[i]])), characters,
+        scores:Object.fromEntries(ids.map(id=>[id,0])), found:[], turn:0, round:1, current:null, revealed:{}, history:[], qaHistory:[], winner:null };
+      myBountyCharacter = characters[myId] || ''; myBountyGuessMessage = '';
+      bountyPush();
+      ids.forEach(id => broadcast('bounty_private', { targetId:id, character:characters[id] }));
+      bountyRender();
+    }
+    function bountyPublicState() {
+      if (!B) return null;
+      return { phase:B.phase, ids:B.ids, names:B.names, scores:B.scores, found:B.found, turn:B.turn,
+        round:B.round, current:B.current ? {...B.current, answers:{...(B.current.answers||{})}} : null, revealed:B.revealed, history:B.history.slice(), qaHistory:(B.qaHistory||[]).slice(), winner:B.winner };
+    }
+    function bountyPush() { if (!B) return; broadcast('bounty_state', { state:bountyPublicState() }); bountyRender(); }
+    function bountyNextTurn() {
+      if (!B) return;
+      if (B.found.length >= B.ids.length - 1) {
+        B.phase='end';
+        const best=Math.max(...B.ids.map(id=>B.scores[id]||0));
+        B.winner=B.ids.filter(id=>(B.scores[id]||0)===best);
+        bountyPush(); return;
+      }
+      B.turn=(B.turn+1)%B.ids.length; B.round += B.turn===0 ? 1 : 0;
+      B.current=null; B.phase='ask'; bountyPush();
+    }
+    function bountyApply(from, a) {
+      if (!B || B.phase==='end' || !B.ids.includes(from)) return;
+      const hunter=B.ids[B.turn];
+      // Anyone may submit a character guess at any time, independently of the turn.
+      if (a.t==='guess') {
+        const target=String(a.targetId||''), guess=String(a.character||'').trim();
+        if (!B.ids.includes(target) || target===from || B.found.includes(target) || !CHARACTER_DATA[guess]) return;
+        const correct=B.characters[target]===guess;
+        if (correct) {
+          B.scores[from]=(B.scores[from]||0)+BOUNTY_WIN; B.found.push(target); B.revealed[target]=B.characters[target];
+          B.history.unshift(`🎯 ${B.names[from]} hedefi buldu: ${B.names[target]} için ${bountyBerry(BOUNTY_WIN)} ödül kazandı.`);
+          if (from===myId) myBountyGuessMessage=`Doğru tahmin: ${guess} · +${bountyBerry(BOUNTY_WIN)}`;
+          else broadcast('bounty_private', { targetId:from, guessMessage:`Doğru tahmin: ${guess} · +${bountyBerry(BOUNTY_WIN)}` });
+        } else {
+          B.scores[from]=(B.scores[from]||0)-BOUNTY_WRONG;
+          B.history.unshift(`🌊 ${B.names[from]} ${B.names[target]} için yanlış tahmin yaptı. ${bountyBerry(BOUNTY_WRONG)} ceza.`);
+          const privateMsg=`Yanlış tahminin: ${guess} · −${bountyBerry(BOUNTY_WRONG)}`;
+          if (from===myId) myBountyGuessMessage=privateMsg;
+          else broadcast('bounty_private', { targetId:from, guessMessage:privateMsg });
+        }
+        bountyPush(); return;
+      }
+      if (a.t==='ask' && B.phase==='ask' && from===hunter) {
+        const q=String(a.question||'').trim().slice(0,180); if (q.length<4) return;
+        B.current={hunterId:from,question:q,answers:{}}; B.phase='answer';
+        B.history.unshift(`${B.names[from]} tüm mürettebata sordu: “${q}”`); bountyPush();
+      } else if (a.t==='answer' && B.phase==='answer' && B.current && B.ids.includes(from) && !Object.prototype.hasOwnProperty.call(B.current.answers,from)) {
+        B.current.answers[from]=!!a.yes;
+        B.qaHistory=B.qaHistory||[];
+        B.qaHistory.unshift({ playerId:from, question:B.current.question, answer:!!a.yes, round:B.round, hunterId:B.current.hunterId });
+        B.history.unshift(`${B.names[from]} soruyu yanıtladı.`);
+        if (B.ids.every(id=>Object.prototype.hasOwnProperty.call(B.current.answers,id))) B.phase='result';
+        bountyPush();
+      } else if (a.t==='next' && B.phase==='result' && from===hunter) bountyNextTurn();
+      else if (a.t==='again' && B.phase==='end' && from===B.ids[0]) bountyStart();
+    }
+    function bountyAct(action) { if (isHost) bountyApply(myId,action); else broadcast('bounty_action',{action}); }
+    function bountyRender() {
+      if (!B) return;
+      gameState='bounty'; show('bounty');
+      const me=myId, hunter=B.ids[B.turn], current=B.current, view=document.getElementById('bountyView');
+      const esc=bountyEsc;
+      let h=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap"><div><div class="small">GRAND LINE ARCADE</div><h2 style="font-family:'Pirata One',cursive;color:var(--straw);font-size:2rem">🎯 Ödül Avcısı</h2><div class="small">Oda: <b style="color:var(--straw)">${esc(roomCode)}</b> · Tur ${B.round}</div></div><button id="bountyLeave" class="secondary" style="width:auto;margin:0;padding:8px 12px">← Lobiye Dön</button></div>`;
+      h+='<div class="bounty-layout"><div class="bounty-main">';
+      h+=`<div class="bounty-private"><div class="secret-title">Senin gizli karakterin</div><p class="small">Bu karakteri diğer oyuncular bulmaya çalışacak. Cevabı sakla!</p>${myBountyCharacter?charImgHtml(myBountyCharacter):'<div class="char-img-box"><div class="char-img-ph">☠</div></div>'}<div class="secret-name">${myBountyCharacter?esc(myBountyCharacter):'Karakter dağıtılıyor…'}</div></div>`;
+      h+='<div class="section-title">🏴‍☠️ Mürettebatın ödülleri</div><p class="small">Sıra beklemeden, istediğin korsanın yanındaki alana karakter tahminini yazabilirsin. Yanlış tahmin Berry düşürür.</p>';
+      B.ids.forEach(id=>{const found=B.found.includes(id);const qa=(B.qaHistory||[]).filter(item=>item.playerId===id);const qaHtml=qa.length?qa.map(item=>`<div class="qa-entry"><div class="qa-question">S${item.round||1}: ${esc(item.question)}</div><div class="qa-answer">Cevap: <b>${item.answer?'Evet':'Hayır'}</b></div></div>`).join(''):'<div class="small">Bu oyuncu henüz hiçbir soruyu yanıtlamadı.</div>';h+=`<div class="bounty-player ${found?'found':''}" tabindex="0" aria-label="${esc(B.names[id]||'Korsan')} oyuncusunun soru-cevap geçmişi"><div class="bounty-player-info"><b>${esc(B.names[id]||'Korsan')}${id===me?' (Sen)':''}</b><div class="bounty-amount">${esc(bountyBerry(B.scores[id]||0))}</div>${id!==me&&!found?`<div class="bounty-guess-form"><input id="bountyGuess_${esc(id)}" list="bountyCharacters" placeholder="Karakter tahmini…" autocomplete="off"><button data-bounty-guess="${esc(id)}">Tahmin Et</button></div>`:''}</div><span class="bounty-tag ${found?'found':''}">${found?'✓ '+esc(B.revealed[id]||'Bulundu'):'Gizli karakter'}</span><div class="bounty-hover-history"><strong>📜 ${esc(B.names[id]||'Korsan')} · Soru-Cevap Geçmişi (${qa.length})</strong>${qaHtml}</div></div>`;});
+      h+='<datalist id="bountyCharacters">'+CHARACTERS.map(c=>`<option value="${esc(c)}"></option>`).join('')+'</datalist>';
+      if(myBountyGuessMessage) h+=`<div class="result-box ${myBountyGuessMessage.startsWith('Doğru')?'win':'lose'}" style="margin:10px 0">${esc(myBountyGuessMessage)}</div>`;
+      if(B.phase==='end') {
+        const winners=(B.winner||[]).map(id=>esc(B.names[id])).join(', ');
+        h+=`<div class="result-box win" style="margin-top:14px">🏆 ${winners} kazandı!<div class="small" style="margin-top:8px">Tüm gizli karakterler bulundu.</div></div>`;
+        if(isHost) h+='<button id="bountyAgain" style="margin-top:12px">Yeni Maç</button>';
+      } else if(B.phase==='ask') {
+        h+=`<div class="bounty-board"><h2>${hunter===me?'Sıra sende, ödül avcısı!':esc(B.names[hunter])+' düşünüyor…'}</h2><p class="small">Tüm mürettebata aynı soruyu sor. Herkes cevabını kendi kutusundan gönderecek. Karakter tahminleri turdan bağımsız yapılabilir.</p>`;
+        if(hunter===me) h+='<div class="bounty-actions"><label class="small" for="bountyQuestion">Tüm mürettebata soracağın soru</label><textarea id="bountyQuestion" placeholder="Örn. Bu karakter Devil Fruit kullanıyor mu?" maxlength="180" style="min-height:82px;margin:6px 0 10px"></textarea><button id="bountyAsk">Herkese Sor</button></div>';
+        h+='</div>';
+      } else if(B.phase==='answer' && current) {
+        h+=`<div class="bounty-board"><h2>📣 Mürettebata soru</h2><div class="question-box">“${esc(current.question)}”</div><p class="small">Her oyuncunun cevabı ayrı kutuda görünür.</p><div class="bounty-answer-grid">`;
+        B.ids.forEach(id=>{const answered=Object.prototype.hasOwnProperty.call(current.answers||{},id);h+=`<div class="bounty-answer-card"><strong>${esc(B.names[id])}${id===me?' (Sen)':''}</strong>${answered?`<div class="answer-value">${current.answers[id]?'Evet':'Hayır'}</div>`:id===me?'<div class="small">Cevabını seç:</div><div class="bounty-actions row"><button id="bountyYes" class="success">Evet</button><button id="bountyNo" class="secondary">Hayır</button></div>':'<div class="small">Henüz cevaplamadı</div>'}</div>`;});
+        h+='</div>';
+        if(hunter===me) h+=`<p class="small" style="margin-top:12px">${Object.keys(current.answers||{}).length}/${B.ids.length} kişi cevapladı.</p>`;
+        h+='</div>';
+      } else if(B.phase==='result' && current) {
+        h+=`<div class="bounty-board"><h2>📋 Tüm cevaplar alındı</h2><div class="question-box">“${esc(current.question)}”</div><div class="bounty-answer-grid">`;
+        B.ids.forEach(id=>{const answered=Object.prototype.hasOwnProperty.call(current.answers||{},id);h+=`<div class="bounty-answer-card"><strong>${esc(B.names[id])}</strong><div class="answer-value">${answered?(current.answers[id]?'Evet':'Hayır'):'Cevap yok'}</div></div>`;});
+        h+='</div>';
+        if(hunter===me) h+='<button id="bountyNext" class="success" style="margin-top:12px">Sonraki Avcı</button>';
+        else h+=`<p class="status">${esc(B.names[hunter])} sonraki tura geçecek.</p>`;
+        h+='</div>';
+      }
+      h+='</div><aside class="bounty-sidebar"><div class="lobby-section"><div class="section-title">📜 Av Günlüğü · '+B.history.length+' olay</div><p class="small">En yeni olaylar üstte. Geçmişi kaydırarak baştan sona inceleyebilirsin.</p><div class="bounty-log">'+(B.history.length?B.history.map((x,i)=>`<div class="bounty-log-item"><span class="log-num">#${B.history.length-i}</span>${esc(x)}</div>`).join(''):'<div class="bounty-log-item">İlk soru henüz sorulmadı.</div>')+'</div></div></aside></div>';
+      view.innerHTML=h; hydrateImgs(view);
+      const g=id=>document.getElementById(id);
+      if(g('bountyLeave')) g('bountyLeave').onclick=()=>g('btnLeave').onclick();
+      if(g('bountyAsk')) g('bountyAsk').onclick=()=>{const q=g('bountyQuestion').value.trim();if(q.length<4){alert('Biraz daha açık bir soru yaz.');return;}bountyAct({t:'ask',question:q});};
+      if(g('bountyYes')) g('bountyYes').onclick=()=>bountyAct({t:'answer',yes:true});
+      if(g('bountyNo')) g('bountyNo').onclick=()=>bountyAct({t:'answer',yes:false});
+      view.querySelectorAll('[data-bounty-guess]').forEach(btn=>btn.onclick=()=>{const targetId=btn.getAttribute('data-bounty-guess');const field=g('bountyGuess_'+targetId);const c=field?.value.trim()||'';if(!CHARACTER_DATA[c]){alert('Listeden geçerli bir One Piece karakteri seç.');return;}bountyAct({t:'guess',targetId,character:c});if(field)field.value='';});
+      if(g('bountyNext')) g('bountyNext').onclick=()=>{myBountyGuessMessage='';bountyAct({t:'next'});};
+      if(g('bountyAgain')) g('bountyAgain').onclick=()=>{if(isHost)bountyStart();else broadcast('bounty_action',{action:{t:'again'}});};
+    }
+
+    // ========== DEN DEN MUSHI: GİZLİ MESAJ ==========
+    const DEN_GUESS_MULTIPLIERS = [20, 16, 12, 8, 4, 0, 0];
+    const DEN_NARRATOR_MULTIPLIERS = [6, 8, 10];
+    const DEN_VOTE_SECONDS = 8;
+    const DEN_EMOJI_SLOT_SECONDS = 8;
+    const DEN_EMOJI_SLOTS = 5;
+    const DEN_EMOJI_LIBRARY = ['😀','😎','🤔','😱','😂','😭','😈','👑','☠️','💀','🔥','💧','⚡','❄️','🌪️','🌊','🌋','🌙','⭐','☀️','🌈','🌑','👁️','👀','🧠','❤️','💔','💪','🦵','👊','✊','🖐️','🤚','🦶','🦷','👃','👂','🗣️','🤫','🤐','🤥','😴','🤒','🤢','🤮','🥶','🥵','🫡','🫣','🦁','🐯','🐺','🦊','🐻','🐼','🐸','🐵','🐗','🐍','🐉','🦖','🦅','🦜','🦈','🐟','🐙','🦑','🦀','🐚','🐋','🐬','🐊','🐘','🦌','🐎','🐈','🐕','🦇','🕷️','🦂','🦋','🌹','🌻','🌵','🍎','🍊','🍋','🍇','🍉','🍌','🍍','🥥','🍖','🍗','🍜','🍩','🍪','🍰','🍺','🥛','🧪','🧬','💊','💣','💥','💫','✨','💎','🪙','💰','💸','🎯','🎲','🃏','🎭','🎤','🎸','🎻','🎺','🥁','🎵','🎶','📚','📜','🗺️','🧭','🔍','🔑','🔒','🗝️','⚔️','🗡️','🛡️','🏹','🔫','🪓','🔨','⛓️','🪝','⚓','🚢','⛵','🏴‍☠️','🏰','⛩️','🗻','🌳','🌴','🪨','🧊','🌀','🪄','🧿','🪞','🎩','👒','🧢','👓','🕶️','👘','🥋','🦾','🤖','🦿','🪽','🩹','🩺','💉','🛠️','📡','☎️','📣','🚬','🪶','🪷','🪸','🪼','🧨','🪦','⚰️','🌍','🌎','🌏','🪐','☄️','🛸','👽','👻','🎃','🧟','🧛','🧙','🧚','🧜','🧝','🦸','🦹','🤺','🥷','🧑‍🍳','🧑‍⚕️','🧑‍🔬','🧑‍✈️','🧑‍🚀','🧑‍🎤','🧑‍🎨','🧑‍🏫','🧑‍⚖️','🧑‍🌾','🧑‍🔧','🧑‍🚒','🧑‍💻','🧑‍🎓'];
+    const DEN_TABOO = {
+      'Monkey D. Luffy':['Lastik','Korsan','Şapka','Shanks','Gear','Et','Saman Hasır'],
+      'Roronoa Zoro':['Kılıç','Üç','Santoryu','Sanji','Kaybolmak','Yeşil saç','Mihawk'],
+      'Nami':['Harita','Navigatör','Para','Hırsız','Turuncu saç','Zeus','Hava durumu'],
+      'Usopp':['Keskin nişancı','Yalan','Sapan','Korkak','Sogeking','Kabuto','Elbaf'],
+      'Sanji':['Aşçı','Bacak','Zoro','Sigara','Kadın','All Blue','Vinsmoke'],
+      'Tony Tony Chopper':['Doktor','Ren geyiği','Pamuk şeker','Rumble Ball','Mavi burun','Canavar','Hiriluk'],
+      'Nico Robin':['Arkeolog','Poneglyph','Ohara','Enies Lobby','Çiçek','Hana Hana','Arkeoloji'],
+      'Franky':['Robot','Cyborg','Cola','SUUUPER','Gemi ustası','Sunny','Metal'],
+      'Brook':['İskelet','Müzisyen','Afro','Yohoho','Laboon','Ruh','Keman'],
+      'Jinbe':['Balıkadam','Karate','Dümenci','Balıkadam Adası','Deniz','Jimbei','Shichibukai'],
+      'Shanks':['Kızıl saç','Yonko','Luffy','Kol','Roger','Haki','Kızıl Saçlı'],
+      'Portgas D. Ace':['Ateş','Sabo','Luffy','Beyazsakal','Mera Mera','Şapka','Dadan'],
+      'Sabo':['Ateş','Devrimci','Dragon','Ace','Luffy','Borular','Mera Mera'],
+      'Trafalgar Law':['ROOM','Doktor','Ope Ope','Kalp','Polar Tang','Doflamingo','Trafalgar'],
+      'Eustass Kid':['Manyetik','Metal','Killer','Saç','Punk','Damned Punk','Kol'],
+      'Marshall D. Teach':['Karasakal','Yami Yami','Gura Gura','İki meyve','Yonko','Ace','Zehahaha'],
+      'Edward Newgate':['Beyazsakal','Gura Gura','Deprem','Ace','Yonko','Bisento','Oğullarım'],
+      'Kaido':['Ejderha','Yamato','Wano','Yonkou','Onigashima','Mace','En güçlü yaratık'],
+      'Charlotte Linlin':['Big Mom','Totland','Homies','Napoleon','Prometheus','Zeus','Katakuri'],
+      'Charlotte Katakuri':['Mochi','Gelecek görme','Donut','Big Mom','Trident','Ağzı','Kardeş'],
+      'Donquixote Doflamingo':['İpler','Joker','Dressrosa','Kuş kafesi','Gözlük','Corazon','Donquixote'],
+      'Crocodile':['Kum','Alabasta','Baroque Works','Kanca','Mr. 0','Pluton','Yağmur'],
+      'Dracule Mihawk':['En iyi kılıç ustası','Yoru','Zoro','Şahin göz','Kılıç','Shichibukai','Kara kılıç'],
+      'Boa Hancock':['Amazon Lily','Güzellik','Taş','Luffy','Kuja','Yılan','Mero Mero'],
+      'Buggy':['Palyaço','Kırmızı burun','Shanks','Roger','Cross Guild','Parçalanma','Yonko'],
+      'Gol D. Roger':['Korsanlar Kralı','Laugh Tale','One Piece','Ace','İdam','Roger Korsanları','Joy Boy'],
+      'Monkey D. Garp':['Denizci','Yumruk','Luffy','Dragon','Koby','Kahraman','Galaxy Impact'],
+      'Sakazuki':['Akainu','Magma','Filo amirali','Ohara','Marineford','Adalet','Kuzan'],
+      'Borsalino':['Kizaru','Işık','Lazer','Amiral','Yata no Kagami','Pacifista','Borsalino'],
+      'Kuzan':['Aokiji','Buz','Amiral','Karasakal','Punk Hazard','Bisiklet','Hie Hie'],
+      'Enel':['Yıldırım','Skypiea','Tanrı','Raigo','Altın','Goro Goro','Ay'],
+      'Yamato':['Kaido','Oden','Wano','Kelepçe','Günlük','Kurt','Thunder Bagua'],
+      'Dr. Vegapunk':['Bilim insanı','Egghead','Uydu','Punk Records','Seraphim','Beyin','Dünya Hükümeti']
+    };
+    const DEN_ALIASES = {
+      'monkey d. luffy':['luffy'], 'roronoa zoro':['zoro'], 'tony tony chopper':['chopper'],
+      'portgas d. ace':['ace'], 'edward newgate':['whitebeard','beyazsakal'], 'marshall d. teach':['blackbeard','karasakal'],
+      'charlotte linlin':['big mom'], 'dracule mihawk':['mihawk'], 'donquixote doflamingo':['doflamingo'],
+      'trafalgar law':['law'], 'eustass kid':['kid'], 'monkey d. garp':['garp'], 'monkey d. dragon':['dragon'],
+      'sakazuki':['akainu'], 'borsalino':['kizaru'], 'kuzan':['aokiji'], 'issho':['fujitora'], 'aramaki':['ryokugyu']
+    };
+    const denNorm = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('tr-TR').replace(/[’']/g,'').replace(/[^a-z0-9çğıöşü\s-]/gi,'').replace(/\s+/g,' ').trim();
+    const DEN_CHARACTER_CLUES = {
+      'Vivi':['Nefertari','Alabasta','Baroque Works','Miss Wednesday','Igaram','Karoo','Kraliyet'], 'Nefertari Cobra':['Vivi','Alabasta','Nefertari','Kral','Kraliyet','Pell','Chaka'],
+      'Perona':['Horo Horo','Negatif hayalet','Thriller Bark','Moria','Zombi','Korku','Kumaşı'], 'Gecko Moria':['Thriller Bark','Gölge','Zombi','Kage Kage','Oars','Perona','Kuma'],
+      'Arlong':['Nami','Cocoyasi','Balıkadam','Testere burun','Nezumi','Güneş Korsanları','East Blue'], 'Hatchan':['Ahtapot','Takoyaki','Arlong','Sabaody','Kılıç','Balıkadam','Camie'],
+      'Smoker':['Jitte','Duman','Logia','G-5','Tashigi','Punk Hazard','Beyaz Avcı'], 'Tashigi':['Kılıç','Smoker','Kuina','Loguetown','G-5','Shigure','Denizci'],
+      'Koby':['Garp','Marineford','Pembe saç','SWORD','Hachinosu','Denizci','Helmeppo'], 'Helmeppo':['Koby','Garp','Morgan','SWORD','Kılıç','Denizci','Marineford'],
+      'Rob Lucci':['Leopar','CP9','CP0','Enies Lobby','Hattori','Rokushiki','Luffy'], 'Kaku':['Zürafa','CP9','Enies Lobby','Usopp','Rokushiki','Gemi ustası','CP0'],
+      'Kalifa':['CP9','Bubble','Enies Lobby','Spandam','Rokushiki','Sekreter','Ajan'], 'Jabra':['Kurt','CP9','Enies Lobby','Rokushiki','Kaku','Zoan','Ajan'],
+      'Magellan':['Impel Down','Zehir','Hannyabal','Venom Demon','Mahkum','Hapishane','Bon Clay'], 'Bon Clay':['Bentham','Okama','Alabasta','Impel Down','Kopyalama','Ballet','Nakama'],
+      'Caesar Clown':['Gaz','Punk Hazard','SAD','Law','SMILE','Bilim insanı','Joker'], 'Monet':['Kar','Punk Hazard','Harpy','Caesar','Doflamingo','Logia','Yeti Cool Brothers'],
+      'Bartolomeo':['Bari Bari','Barto Club','Luffy hayranı','Colosseum','Grand Fleet','Barrier','Green Bit'], 'Cavendish':['Hakuba','Güzel Korsanlar','Dressrosa','Grand Fleet','Kılıç','At','Colosseum'],
+      'Rebecca':['Dressrosa','Kyros','Colosseum','Gladyatör','Viola','Riku','Oyuncaklar'], 'Kyros':['Rebecca','Oyuncak asker','Dressrosa','Riku','Colosseum','Gladyatör','Bacak'],
+      'Viola':['Violet','Dressrosa','Doflamingo','Riku','Göz','Gül','Rebecca'], 'Sugar':['Oyuncak','Hobi Hobi','Doflamingo','Dressrosa','Usoland','Üzüm','Trebol'],
+      'Pica':['Taş','Doflamingo','Dressrosa','Trebol','Diamante','Ses','Colosseum'], 'Trebol':['Sümük','Doflamingo','Dressrosa','Pica','Diamante','Sugar','Yapışkan'],
+      'Wapol':['Drum','Yeme','Metal','Dalton','Vivi','Bliking','Kral'], 'Foxy':['Yavaş ışın','Davy Back Fight','Silver Fox','Afro','Tonjit','Long Ring Long Land','Foxy Korsanları'],
+      'Enel':['Skypiea','Mantra','Raigo','Maxim','Goro Goro','Tanrı','Ay'], 'Wyper':['Skypiea','Shandia','Burn Bazooka','Kalgara','Upper Yard','Dial','Savaşçı'],
+      'Gan Fall':['Skypiea','Pierre','Tanrı','Wyper','Shandia','Mızrak','Pegasus'], 'Dr. Kureha':['Hiriluk','Chopper','Drum','Sakura','Doktor','Yaşlı kadın','Kış'],
+      'Dr. Hiriluk':['Chopper','Sakura','Drum','Kureha','Doktor','Mantar','Korsan'], 'Nojiko':['Nami','Bellemere','Cocoyasi','Mandalina','Arlong','Dövme','Turuncu'],
+      'Bellemere':['Nami','Nojiko','Cocoyasi','Arlong','Mandarin','Denizci','Evlatlık'], 'Red-Leg Zeff':['Sanji','Baratie','All Blue','Kırmızı ayak','Aşçı','Bacak','Don Krieg'],
+      'Kaya':['Usopp','Syrup Village','Merry','Klahadore','Doktor','Konak','Uşak'], 'Kuro':['Klahadore','Usopp','Syrup Village','Kedi pençesi','Plan','Kaya','East Blue'],
+      'Don Krieg':['Baratie','Gin','Zehirli gaz','Zırh','Pearl','East Blue','Mihawk'], 'Gin':['Don Krieg','Baratie','Sanji','Pearl','İkili tonfa','East Blue','Sadakat'],
+      'Alvida':['Buggy','Koby','Topuz','Smooth-Smooth','East Blue','Demir topuz','Güzellik'], 'Axe-Hand Morgan':['Baltalı el','Helmeppo','Koby','Shells Town','Garp','Denizci','Zorbalık'],
+      'Shiki':['Altın Aslan','Rocks','Roger','Uçan ada','Dümen','Edd War','Impel Down'], 'Shakky':['Rayleigh','Amazon Lily','Bar','Sabaody','Kuja','Gloriosa','Korsan'],
+      'Portgas D. Rouge':['Ace','Roger','Baterilla','Hamilelik','Beyazsakal','Anne','Güney Mavi'], 'Donquixote Rosinante':['Corazon','Law','Doflamingo','Sessizlik','Donquixote','Denizci','Minyon'],
+      'Jaguar D. Saul':['Ohara','Robin','Dev','Aokiji','Buster Call','Elbaf','D.'], 'Hajrudin':['Dev','Grand Fleet','Elbaf','Colosseum','Loki','Yeni Dev Savaşçı','Herkül'],
+      'Don Chinjao':['Sai','Garp','Happo Navy','Matkap kafa','Colosseum','Buz kıtası','Chinjao'], 'Dr. Vegapunk':['Egghead','Satellites','Punk Records','Seraphim','MADS','Bilim','Mother Flame'],
+      'Kozuki Oden':['Wano','Roger','Whitebeard','Enma','Togen Totsuka','Kaidou','Boil'], 'Kozuki Momonosuke':['Wano','Oden','Shinobu','Yamato','Ejderha','Onigashima','Shogun'],
+      'Kinemon':['Wano','Foxfire','Momonosuke','Kanjuro','Oden','Samuray','Fukurokuju'], 'Kikunojo':['Wano','Oden','Kiku','Akazaya Nine','Onigashima','Samuray','Kılıç'],
+      'Kozuki Hiyori':['Wano','Komurasaki','Orochi','Oden','Denjiro','Shamisen','Onami'], 'Raizo':['Wano','Ninja','Zou','Akazaya Nine','Scroll','Onigashima','Shinobu'],
+      'Denjiro':['Wano','Kyoshiro','Hiyori','Oden','Akazaya Nine','Orochi','Kılıç'], 'Kurozumi Orochi':['Wano','Shogun','Kaidou','Yamato','Hiyori','Yılan','Kurozumi'],
+      'Kurozumi Kanjuro':['Wano','Oden','Resim','Akazaya Nine','İhanet','Orochi','Onigashima'], 'Tama':['Wano','Kibi dango','Komachiyo','Ace','Onigashima','Hayvanlar','Otsuru'],
+      'Kozuki Toki':['Wano','Oden','Zaman','Amatsuki','Momonosuke','Hiyori','Kuri'], 'Hyogoro':['Wano','Yakuza','Luffy','Udon','Ryuo','Flower Capital','Oden'],
+      'Ashura Doji':['Wano','Shutenmaru','Oden','Akazaya Nine','Kuri','Onigashima','Samuray'], 'Ryuma':['Wano','Sword God','Shusui','Zombi','Brook','Thriller Bark','Dragon'],
+      'Inuarashi':['Zou','Mink','Nekomamushi','Sulong','Duke','Oden','Elephant'], 'Nekomamushi':['Zou','Mink','Inuarashi','Sulong','Cat Viper','Pedro','Oden'],
+      'Carrot':['Mink','Sulong','Pedro','Zou','Electro','Bunny','Whole Cake'], 'Pedro':['Mink','Nox Pirates','Carrot','Perospero','Zou','Sulong','Whole Cake'],
+      'Dorry':['Giant','Little Garden','Brogy','Elbaf','Warrior','Bounty','Giant Warrior Pirates'], 'Brogy':['Giant','Little Garden','Dorry','Elbaf','Warrior','Bounty','Giant Warrior Pirates'],
+      'Fisher Tiger':['Sun Pirates','Koala','Mariejois','Fishman','Jinbe','Slave','Arlong'], 'Otohime':['Shirahoshi','Fishman Island','Queen','Fisher Tiger','Neptune','Human','Dream'],
+      'King Neptune':['Shirahoshi','Fishman Island','Otohime','Poseidon','Trident','Ryugu','Fukaboshi'], 'Hody Jones':['Fishman Island','Arlong','Energy Steroids','Neptune','Noah','New Fish-Man Pirates','Shirahoshi'],
+      'Shirahoshi':['Poseidon','Neptune','Otohime','Fishman Island','Sea Kings','Mermaid','Noah'], 'Bepo':['Heart Pirates','Law','Polar Tang','Mink','Sulong','Shachi','Penguin'],
+      'Penguin':['Heart Pirates','Law','Bepo','Shachi','Polar Tang','Submarine','Sabaody'], 'Shachi':['Heart Pirates','Law','Bepo','Penguin','Polar Tang','Submarine','Sabaody'],
+      'Urouge':['Mad Monk','Sky Island','Worst Generation','Birkan','Sabaody','Wings','Bounty'], 'Capone Bege':['Fire Tank','Gang','Chiffon','Pezz','Big Father','Whole Cake','Worst Generation'],
+      'Jewelry Bonney':['Kuma','Age','Egghead','Worst Generation','Sorbets','Pizza','Supernova'], 'Scratchmen Apoo':['Music','On Air','Longarm','Worst Generation','Kaido','Beasts Pirates','Sabaody'],
+      'Basil Hawkins':['Tarot','Straw','Hawkins Pirates','Worst Generation','Kaido','Wano','Fortune'], 'X Drake':['SWORD','Tobi Roppo','Marine','Allosaurus','Worst Generation','Kaido','Secret agent'],
+      'Killer':['Kid','Punisher','SMILE','Mask','Worst Generation','Onigashima','Kid Pirates'], 'Marco':['Phoenix','Whitebeard','Blue flames','First division','Onigashima','Ace','Zoan'],
+      'Jozu':['Diamond','Whitebeard','Third division','Marineford','Vista','Diamond body','Ice'], 'Vista':['Swordsman','Whitebeard','Flower Sword','Mihawk','Marineford','Fifth division','Duel'],
+      'Izo':['Whitebeard','Oden','Kiku','Gun','Wano','Akazaya Nine','Marineford'], 'Benn Beckman':['Shanks','Red Hair Pirates','Yasopp','Lucky Roo','Rifle','Vice-captain','Haki'],
+      'Yasopp':['Usopp','Shanks','Red Hair Pirates','Sniper','Benn Beckman','Elbaf','Van Augur'], 'Lucky Roo':['Shanks','Red Hair Pirates','Meat','Benn Beckman','Yasopp','Gun','Foosha'],
+      'Silvers Rayleigh':['Dark King','Roger','Luffy','Haki','Sabaody','Amazon Lily','Coating'], 'Scopper Gaban':['Roger','Rayleigh','Axe','Elbaf','Roger Pirates','Loki','Legend'],
+      'Crocus':['Lighthouse','Laboon','Roger','Twin Cape','Brook','Rayleigh','Reverse Mountain'], 'Sengoku':['Buddha','Garp','Fleet Admiral','Marineford','Kong','Blackbeard','Goat'],
+      'Issho':['Fujitora','Gravity','Blind','Zushi Zushi','Dressrosa','Admiral','Meteor'], 'Aramaki':['Ryokugyu','Forest','Wano','Admiral','Akainu','Plants','Reverie'],
+      'Charlotte Pudding':['Third eye','Sanji','Big Mom','Memory','Whole Cake','Chocolate','Wedding'], 'Charlotte Brulee':['Mirror','Katakuri','Big Mom','Mirror World','Whole Cake','Caramel','Witch'],
+      'Charlotte Oven':['Heat','Big Mom','Whole Cake','Katakuri','Daifuku','Hot','Vinsmoke'], 'Charlotte Smoothie':['Longleg','Big Mom','Juice','Sweet Commanders','Whole Cake','Katakuri','Cracker'],
+      'Charlotte Cracker':['Biscuit','Big Mom','Armor','Sweet Commander','Luffy','Pretzel','Whole Cake'], 'Charlotte Perospero':['Candy','Big Mom','Perorin','Pedro','Whole Cake','Candy Slug','Katakuri'],
+      'King':['Lunarian','Kaidou','Flame','Pteranodon','Beasts Pirates','Zoro','Onigashima'], 'Queen':['Plague','Kaidou','Cyborg','Germa','Beasts Pirates','Virus','Onigashima'],
+      'Jack':['Drought','Mammoth','Kaidou','Zou','Beasts Pirates','Duke','Sulong'], 'Ulti':['Page One','Headbutt','Kaidou','Tobi Roppo','Beasts Pirates','Mask','Onigashima'],
+      'Page One':['Ulti','Spinosaurus','Kaidou','Tobi Roppo','Beasts Pirates','Onigashima','Sibling'], 'Black Maria':['Spider','Kaidou','Tobi Roppo','Beasts Pirates','Onigashima','Geisha','Robin'],
+      'Sasaki':['Triceratops','Kaidou','Tobi Roppo','Beasts Pirates','Franky','Onigashima','Armored'], "Who's-Who":['Jinbe','Kaidou','Tobi Roppo','Beasts Pirates','CP9','Gomu Gomu','Onigashima']
+    };
+    function denTabooFor(character) {
+      const curated = DEN_TABOO[character] || [];
+      const group = CHAR_GROUP[character] || '';
+      const known = DEN_CHARACTER_CLUES[character] || [];
+      const facts = (CHARACTER_DATA[character] || []).map(f => {
+        const n = denNorm(f);
+        if (n.includes('devil fruit kullanicisi')) return 'Şeytan Meyvesi';
+        if (n.includes('devil fruit yok')) return 'Şeytan Meyvesi yok';
+        if (n.includes('haki')) return 'Haki';
+        if (n.includes('odulu var')) return 'Ödül';
+        if (n.includes('kadin')) return 'Kadın';
+        if (n.includes('kilic')) return 'Kılıç';
+        if (n.includes('balikadam')) return 'Balıkadam';
+        if (n.includes('denizci')) return 'Denizci';
+        if (n.includes('logia')) return 'Logia';
+        if (n.includes('paramecia')) return 'Paramecia';
+        if (n.includes('zoan')) return 'Zoan';
+        return f;
+      });
+      const groupMates = Object.keys(CHAR_GROUP).filter(n => n !== character && group && CHAR_GROUP[n] === group);
+      const nameParts = character.split(/[ .'-]+/).filter(w => w.length > 2);
+      const aliasEntry = Object.entries(DEN_ALIASES).find(([key]) => denNorm(key) === denNorm(character));
+      const aliases = aliasEntry ? aliasEntry[1] : [];
+      const candidates = [...curated, ...known, ...aliases, ...nameParts, group, ...groupMates.slice(0,12), ...facts, 'Haki','Şeytan Meyvesi','Ödül','Korsan','Denizci','Kılıç','Dünya Hükümeti'];
+      const unique = [];
+      candidates.filter(Boolean).forEach(w => { const n=denNorm(w); if (n && n !== denNorm(character) && !unique.some(x => denNorm(x) === n)) unique.push(String(w)); });
+      // Keep each character's hand-curated words first, but replace any full-answer duplicate with a grounded clue.
+      const curatedSafe = curated.filter(w => denNorm(w) !== denNorm(character)).filter((w,i,a)=>a.findIndex(x=>denNorm(x)===denNorm(w))===i);
+      const prioritized = [...curatedSafe, ...unique.filter(w => !curatedSafe.some(c => denNorm(c)===denNorm(w)))];
+      return auShuffle(curatedSafe.length >= 7 ? curatedSafe : prioritized).slice(0,7);
+    }
+    function denStopTimer() { if (denTimerHandle) clearInterval(denTimerHandle); denTimerHandle = null; }
+    function denStart() {
+      if (!isHost) return;
+      const live = [];
+      Object.values(gameChannel.presenceState()).forEach(arr => arr.forEach(p => { if (p.id && !live.includes(p.id)) live.push(p.id); }));
+      const ids = live.length ? live : Object.keys(players);
+      if (ids.length < 2 || ids.length > 8) return;
+      const names = {}; ids.forEach(id => names[id] = players[id]?.name || myName);
+      D = { ids, names, scores:Object.fromEntries(ids.map(id=>[id,0])), style:'voice', duration:denDuration, round:0, narratorIndex:-1, narratorId:null, character:'', taboo:[], emojiSlots:Array(5).fill(null), emojiActiveIndex:0, narratorMultipliers:{}, narratorMultiplier:8, drawStrokes:[], phase:'choose', endsAt:0, remaining:0, solved:[], correctOrder:[], lastGuessAt:{}, violationVotes:[], voteRequired:0, violationPassed:false, log:[] };
+      myDenCharacter = ''; denFeedback = ''; denNextRound();
+    }
+    function denNextRound() {
+      if (!isHost || !D) return;
+      denStopTimer();
+      D.round += 1; D.narratorIndex = (D.narratorIndex + 1) % D.ids.length; D.narratorId = D.ids[D.narratorIndex];
+      D.character = CHARACTERS[auRnd(CHARACTERS.length)]; D.taboo = denTabooFor(D.character);
+      D.emojiSlots = Array(DEN_EMOJI_SLOTS).fill(null); D.emojiActiveIndex = 0; D.drawStrokes = [];
+      const multiplierBag = auShuffle(DEN_NARRATOR_MULTIPLIERS);
+      D.narratorMultipliers = { voice:multiplierBag[0], draw:multiplierBag[1], emoji:multiplierBag[2] };
+      D.narratorMultiplier = null; D.style = null; D.phase = 'choose'; D.solved = []; D.correctOrder = []; D.lastGuessAt = {};
+      D.duration = denDuration; D.remaining = 0; D.endsAt = 0; D.violationVotes = []; D.violationPassed = false; D.narratorAwarded = false;
+      D.log.unshift(`Tur ${D.round}: anlatıcı ${D.names[D.narratorId]}. Anlatım türünü seçiyor.`);
+      if (D.narratorId === myId) myDenCharacter = D.character;
+      denFeedback = ''; denPush();
+      broadcast('den_private', { targetId:D.narratorId, character:D.character });
+    }
+    function denBeginPlay(style, from) {
+      if (!isHost || !D || D.phase !== 'choose' || from !== D.narratorId || !['voice','draw','emoji'].includes(style)) return;
+      D.style = style; D.narratorMultiplier = Number(D.narratorMultipliers?.[style]) || 6;
+      D.duration = style === 'emoji' ? DEN_EMOJI_SLOT_SECONDS * DEN_EMOJI_SLOTS : denDuration;
+      D.remaining = D.duration; D.endsAt = Date.now() + D.duration * 1000; D.phase = 'playing';
+      D.log.unshift(`Tur ${D.round}: ${D.names[D.narratorId]} ${style==='voice'?'konuşarak':style==='draw'?'çizimle':'emojiyle'} anlatmayı seçti (${D.narratorMultiplier}× anlatıcı katsayısı).`);
+      denPush();
+      let lastShown = D.remaining;
+      denTimerHandle = setInterval(() => {
+        if (!D || !isHost || !['playing','vote'].includes(D.phase)) { denStopTimer(); return; }
+        const left = Math.max(0, Math.ceil((D.endsAt - Date.now()) / 1000));
+        if (left !== lastShown) {
+          D.remaining = left;
+          if (D.style === 'emoji') {
+            const oldIndex = D.emojiActiveIndex;
+            D.emojiActiveIndex = Math.min(DEN_EMOJI_SLOTS - 1, Math.floor((D.duration - left) / DEN_EMOJI_SLOT_SECONDS));
+            lastShown = left;
+            if (oldIndex !== D.emojiActiveIndex) denPush(); else { broadcast('den_state', { state:denPublicState() }); denUpdateClock(); }
+          } else { lastShown = left; denPush(); }
+        }
+        if (left <= 0) { if (D.phase === 'playing') denEndRound(); else denFinishRound(); }
+      }, 200);
+    }
+    function denPublicState() {
+      if (!D) return null;
+      const state = { ids:D.ids, names:D.names, scores:D.scores, style:D.style, duration:D.duration || denDuration, round:D.round, narratorIndex:D.narratorIndex, narratorId:D.narratorId, taboo:D.taboo, emojiSlots:D.emojiSlots || Array(5).fill(null), emojiActiveIndex:D.emojiActiveIndex || 0, narratorMultipliers:D.narratorMultipliers || {}, narratorMultiplier:D.narratorMultiplier, drawStrokes:D.drawStrokes || [], phase:D.phase, remaining:D.remaining, solved:D.solved, correctOrder:D.correctOrder, violationVotes:D.violationVotes || [], voteRequired:D.voteRequired || 0, violationPassed:!!D.violationPassed, log:D.log.slice(0,12) };
+      if (D.phase === 'reveal') state.answer = D.character;
+      return state;
+    }
+    function denPush() { if (!D) return; broadcast('den_state', { state:denPublicState() }); denRender(); }
+    function denEndRound() {
+      if (!D || D.phase !== 'playing') return;
+      denStopTimer();
+      if (D.style !== 'voice') {
+        D.phase = 'reveal'; D.remaining = 0; D.violationPassed = false;
+        const narratorPoints = D.correctOrder.length * D.ids.length * (Number(D.narratorMultiplier) || 6);
+        if (!D.narratorAwarded) { D.scores[D.narratorId] = (D.scores[D.narratorId] || 0) + narratorPoints; D.narratorAwarded = true; }
+        D.log.unshift(`Tur ${D.round}: ${D.style==='draw'?'çizim':'emoji'} cevabı ${D.character}. ${D.correctOrder.length} kişi bildi; anlatıcı +${narratorPoints} puan aldı (${D.ids.length} oyuncu × ${D.narratorMultiplier} × ${D.correctOrder.length}).`);
+        denPush(); return;
+      }
+      D.phase = 'vote'; D.remaining = DEN_VOTE_SECONDS; D.endsAt = Date.now() + DEN_VOTE_SECONDS * 1000;
+      D.violationVotes = []; D.voteRequired = Math.floor(D.ids.filter(id => id !== D.narratorId).length / 2) + 1;
+      D.violationPassed = false;
+      D.log.unshift(`Tur ${D.round}: tahmin süresi bitti; yasaklı kelime oylaması başladı (${DEN_VOTE_SECONDS} saniye).`);
+      denPush();
+      let lastShown = D.remaining;
+      denTimerHandle = setInterval(() => {
+        if (!D || !isHost || D.phase !== 'vote') { denStopTimer(); return; }
+        const left = Math.max(0, Math.ceil((D.endsAt - Date.now()) / 1000));
+        if (left !== lastShown) { D.remaining = left; lastShown = left; denPush(); }
+        if (left <= 0) denFinishRound();
+      }, 200);
+    }
+    function denFinishRound() {
+      if (!D || D.phase !== 'vote') return;
+      denStopTimer(); D.phase = 'reveal'; D.remaining = 0;
+      const votes = (D.violationVotes || []).length;
+      D.violationPassed = votes >= (D.voteRequired || 1);
+      const narratorPoints = D.violationPassed ? 0 : D.correctOrder.length * D.ids.length * (Number(D.narratorMultiplier) || 6);
+      if (!D.narratorAwarded) { D.scores[D.narratorId] = (D.scores[D.narratorId] || 0) + narratorPoints; D.narratorAwarded = true; }
+      if (D.violationPassed) {
+        D.log.unshift(`Tur ${D.round}: yasaklı kelime kullanımı ${votes}/${D.ids.length-1} oyla onaylandı. Anlatıcı puan alamadı.`);
+      } else {
+        D.log.unshift(`Tur ${D.round}: cevap ${D.character}. ${D.correctOrder.length} kişi bildi; anlatıcı +${narratorPoints} puan aldı (${D.ids.length} oyuncu × ${D.narratorMultiplier} × ${D.correctOrder.length}).`);
+      }
+      denPush();
+    }
+    function denMatches(guess) {
+      const g = denNorm(guess), answer = denNorm(D?.character);
+      if (!g || !answer) return false;
+      if (g === answer) return true;
+      const aliasEntry = Object.entries(DEN_ALIASES).find(([key]) => denNorm(key) === answer);
+      const aliases = aliasEntry ? aliasEntry[1] : [];
+      return aliases.some(a => denNorm(a) === g);
+    }
+    function denApply(from, action) {
+      if (!isHost || !D || !action) return;
+      if (action.t === 'violation_vote') {
+        if (D.phase !== 'vote' || !D.ids.includes(from) || from === D.narratorId || (D.violationVotes || []).includes(from)) return;
+        D.violationVotes.push(from);
+        denPush();
+        return;
+      }
+      if (action.t === 'next' && D.phase === 'reveal') { denNextRound(); return; }
+      if (action.t === 'choose_style') { denBeginPlay(action.style, from); return; }
+      if (D.phase !== 'playing') return;
+      if (action.t === 'draw_line') { if (D.style !== 'draw' || from !== D.narratorId || !action.line) return; const line = action.line; if (![line.x1,line.y1,line.x2,line.y2].every(v=>Number.isFinite(Number(v))) || !/^#[0-9a-f]{6}$/i.test(line.color||'')) return; const safeLine={x1:Math.max(0,Math.min(1,Number(line.x1))),y1:Math.max(0,Math.min(1,Number(line.y1))),x2:Math.max(0,Math.min(1,Number(line.x2))),y2:Math.max(0,Math.min(1,Number(line.y2))),color:line.color,width:Math.max(1,Math.min(24,Number(line.width)||4))}; D.drawStrokes.push(safeLine); if(D.drawStrokes.length>5000) D.drawStrokes.splice(0,D.drawStrokes.length-5000); denDrawSegment(safeLine, false); broadcast('den_draw_line',{roomCode,line:safeLine}); return; }
+      if (action.t === 'draw_clear') { if (D.style !== 'draw' || from !== D.narratorId) return; D.drawStrokes=[]; denClearCanvas(false); broadcast('den_draw_clear',{roomCode}); return; }
+      if (action.t === 'emoji_pick') { if (D.style !== 'emoji' || from !== D.narratorId || !DEN_EMOJI_LIBRARY.includes(action.emoji)) return; const slot = Number(D.emojiActiveIndex) || 0; if (slot < 0 || slot >= DEN_EMOJI_SLOTS || D.emojiSlots[slot]) return; D.emojiSlots[slot] = action.emoji; D.log.unshift(`Tur ${D.round}: anlatıcı ${slot+1}. emojiyi seçti.`); denPush(); return; }
+      if (action.t === 'guess') {
+        if (!D.ids.includes(from) || from === D.narratorId || D.solved.includes(from)) return;
+        const now = Date.now(), last = D.lastGuessAt[from] || 0;
+        if (now - last < 2000) { broadcast('den_private', { targetId:from, message:'Yeni tahmin için 2 saniye beklemelisin.', cooldown:Math.max(0,2000-(now-last)) }); return; }
+        const guess = String(action.guess || '').trim().slice(0,80);
+        if (!guess) return;
+        if (denMatches(guess)) {
+          const rank = D.correctOrder.length, multiplier = DEN_GUESS_MULTIPLIERS[rank] ?? 0, points = D.ids.length * multiplier;
+          D.solved.push(from); D.correctOrder.push(from); D.scores[from] = (D.scores[from] || 0) + points;
+          D.log.unshift(`${D.names[from]} ${rank+1}. sırada bildi: +${points} puan.`);
+          broadcast('den_private', { targetId:from, message:`Doğru bildin! +${points} puan.` });
+          if (D.ids.filter(id=>id!==D.narratorId).every(id=>D.solved.includes(id)) && D.style !== 'emoji') { denEndRound(); return; }
+          denPush();
+        } else {
+          D.lastGuessAt[from] = now;
+          broadcast('den_private', { targetId:from, message:'Yanlış tahmin! 2 saniye beklemeden tekrar deneyemezsin.', cooldown:2000 });
+        }
+      }
+    }
+    function denAct(action) { if (isHost) denApply(myId,action); else broadcast('den_action',{action}); }
+    function denUpdateClock() {
+      const clock = document.getElementById('denClock');
+      if (clock && D) { clock.textContent = D.phase === 'choose' ? 'ANLATICI SEÇİYOR' : D.phase === 'playing' ? `${Math.max(0,Number(D.remaining)||0)} sn` : D.phase === 'vote' ? `OYLAMA · ${Math.max(0,Number(D.remaining)||0)} sn` : 'TUR BİTTİ'; clock.style.color = Number(D.remaining)<=5 ? '#ff7777' : 'var(--straw)'; }
+      const emojiClock = document.getElementById('denEmojiClock');
+      if (emojiClock && D) emojiClock.textContent = `Sıradaki emoji: ${Math.min((Number(D.emojiActiveIndex)||0)+1,DEN_EMOJI_SLOTS)} / ${DEN_EMOJI_SLOTS} · ${Math.max(0,Number(D.remaining)||0)} saniye kaldı`;
+    }
+    let denCanvasPointer = null, denCanvasEraser = false;
+    function denCanvasContext() { const canvas=document.getElementById('denDrawCanvas'); if(!canvas) return null; const rect=canvas.getBoundingClientRect(); const dpr=window.devicePixelRatio||1; if(canvas.width!==Math.round(rect.width*dpr)||canvas.height!==Math.round(rect.height*dpr)){canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);} const ctx=canvas.getContext('2d'); ctx.setTransform(canvas.width,0,0,canvas.height,0,0); ctx.lineCap='round'; ctx.lineJoin='round'; return {canvas,ctx}; }
+    function denDrawSegment(line, storeOnly=true) { const pair=denCanvasContext(); if(!pair||!line) return; const {ctx}=pair; ctx.strokeStyle=line.color||'#172033'; ctx.lineWidth=(Number(line.width)||5)/Math.max(1,Math.min(pair.canvas.width,pair.canvas.height)); ctx.beginPath(); ctx.moveTo(Number(line.x1),Number(line.y1)); ctx.lineTo(Number(line.x2),Number(line.y2)); ctx.stroke(); }
+    function denClearCanvas(notify=true) { const pair=denCanvasContext(); if(pair) pair.ctx.clearRect(0,0,1,1); if(notify&&D&&isHost){D.drawStrokes=[]; broadcast('den_draw_clear',{roomCode}); denPush();} }
+    function denSetupCanvas(canDraw) {
+      const canvas=document.getElementById('denDrawCanvas'); if(!canvas) return;
+      const redraw=()=>{ const pair=denCanvasContext(); if(!pair)return; pair.ctx.clearRect(0,0,1,1); (D?.drawStrokes||[]).forEach(line=>denDrawSegment(line)); };
+      redraw();
+      if(!canDraw) return;
+      const point=e=>{const r=canvas.getBoundingClientRect();return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))};};
+      canvas.onpointerdown=e=>{e.preventDefault();canvas.setPointerCapture?.(e.pointerId);denCanvasPointer=point(e);};
+      canvas.onpointermove=e=>{if(!denCanvasPointer)return;e.preventDefault();const p=point(e);const color=denCanvasEraser?'#f8f5e9':(document.getElementById('denDrawColor')?.value||'#172033');const width=denCanvasEraser?28:Number(document.getElementById('denDrawWidth')?.value||5);denAct({t:'draw_line',line:{x1:denCanvasPointer.x,y1:denCanvasPointer.y,x2:p.x,y2:p.y,color,width}});denCanvasPointer=p;};
+      const stop=()=>{denCanvasPointer=null;}; canvas.onpointerup=stop;canvas.onpointercancel=stop;canvas.onpointerleave=stop;
+      const eraser=document.getElementById('denDrawEraser');if(eraser)eraser.onclick=()=>{denCanvasEraser=!denCanvasEraser;eraser.textContent=denCanvasEraser?'✏️ Kaleme Dön':'🧽 Silgi';};
+      const clear=document.getElementById('denDrawClear');if(clear)clear.onclick=()=>denAct({t:'draw_clear'});
+    }
+    function denRender() {
+      if (!D) return;
+      gameState = 'den'; show('den');
+      const me = myId, narrator = D.narratorId === me, playing = D.phase === 'playing';
+      const esc = auEsc, view = document.getElementById('denView');
+      const seconds = Math.max(0, Number(D.remaining)||0);
+      let h = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px"><div><div class="small">GRAND LINE ARCADE</div><h2 style="font-family:'Pirata One',cursive;color:var(--straw);font-size:2rem;margin:4px 0">☎️ Den Den Mushi: Gizli Mesaj</h2><div class="small">Oda: <b style="color:var(--straw)">${esc(roomCode)}</b> · Tur ${D.round} · ${D.style==='emoji'?'40 saniye · 5 emoji':`${D.duration || denDuration} saniye`}</div></div><button id="denLeave" class="secondary" style="width:auto;margin:0;padding:8px 12px">← Lobiye Dön</button></div>`;
+      h += `<div class="den-board"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div class="small">ANLATICI</div><h3 style="margin:4px 0">${esc(D.names[D.narratorId]||'Korsan')}${narrator?' · (Sen)':''}</h3></div><div id="denClock" style="font-size:1.2rem;font-weight:900;color:${seconds<=5?'#ff7777':'var(--straw)'}">${D.phase==='choose'?'ANLATICI SEÇİYOR':playing?seconds+' sn':D.phase==='vote'?'OYLAMA · '+seconds+' sn':'TUR BİTTİ'}</div></div>`;
+      if (D.phase === 'choose') {
+        if (narrator) {
+          const m=D.narratorMultipliers||{};
+          h += `<div class="question-box"><b>Senin karakterin:</b> ${esc(myDenCharacter || 'Karakter yükleniyor…')}<p class="small" style="margin:8px 0 0">Bu tur nasıl anlatmak istiyorsun? Her seçeneğin anlatıcı katsayısı bu tur için rastgele belirlendi. Bilen her oyuncu için oyuncu sayısı × katsayı kadar puan alırsın.</p></div><div class="den-style-grid"><button class="den-style-card" data-den-choose="voice">🗣️<br><b>Konuşarak Anlat</b><br><span class="small">${m.voice||'?'}× katsayı</span></button><button class="den-style-card" data-den-choose="draw">✏️<br><b>Çizimle Anlat</b><br><span class="small">${m.draw||'?'}× katsayı</span></button><button class="den-style-card" data-den-choose="emoji">😀<br><b>Emoji ile Anlat</b><br><span class="small">${m.emoji||'?'}× katsayı</span></button></div>`;
+        } else h += `<div class="question-box">Anlatıcı ${esc(D.names[D.narratorId]||'Korsan')} bu turda nasıl anlatacağını seçiyor. Seçim yapıldığında oyun başlayacak.</div>`;
+      }
+      if (playing && D.style === 'voice') {
+        if (narrator) h += `<div class="question-box"><b>Senin karakterin:</b> ${esc(myDenCharacter || 'Karakter yükleniyor…')}<p class="small" style="margin:8px 0 0">Karakteri konuşarak anlat; aşağıdaki 7 kelimeyi, meyve adını, ödül miktarını veya cevabı doğrudan ele verecek bilgileri söyleme.</p></div>`;
+        else h += `<p class="small" style="margin-top:10px">Anlatıcıyı dinle ve doğru karakteri mümkün olduğunca hızlı tahmin et.</p>`;
+        h += `<div class="section-title">🚫 7 yasaklı kelime</div><div class="den-word-list">${(D.taboo||[]).map(w=>`<div class="den-word">${esc(w)}</div>`).join('')}</div><div class="question-box"><b>⚠️ Önemli kural:</b> Şeytan Meyvesi adını, ödül miktarını veya cevabı doğrudan ele verecek spesifik bilgileri söylemek yasaktır. Yasak kelimelerin ek almış veya çoğul hâlleri de yasaktır.</div>`;
+      }
+      if (playing && D.style === 'draw') {
+        if (narrator) h += `<div class="question-box"><b>Çizmen gereken karakter:</b> ${esc(myDenCharacter || 'Karakter yükleniyor…')}<p class="small">Çizim tahtasına fareyle veya parmağınla çiz. Yazı yazmak ve harf/rakam çizmek yok.</p></div>`;
+        else h += `<div class="question-box">Anlatıcının çizimini izle ve karakteri tahmin et!</div>`;
+        h += `<div class="den-draw-toolbar">${narrator?`<label class="small">Renk <input id="denDrawColor" type="color" value="#172033" style="width:48px;height:38px;padding:2px;margin:0"></label><label class="small">Kalınlık <input id="denDrawWidth" type="range" min="2" max="18" value="5" style="width:100px;margin:0"></label><button id="denDrawEraser" class="secondary">🧽 Silgi</button><button id="denDrawClear" class="secondary">🗑️ Tahtayı Temizle</button>`:'<span class="small">Canlı çizim</span>'}</div><canvas id="denDrawCanvas" class="den-draw-canvas" aria-label="Canlı çizim tahtası"></canvas>`;
+      }
+      if (playing && D.style === 'emoji') {
+        if (narrator) h += `<div class="question-box"><b>Senin karakterin:</b> ${esc(myDenCharacter || 'Karakter yükleniyor…')}<p class="small" style="margin:7px 0 0">Bu karakteri yalnızca emojilerle anlat; cevap dinleyicilerden gizlidir.</p></div>`;
+        const active = Math.min(DEN_EMOJI_SLOTS-1, Number(D.emojiActiveIndex)||0);
+        h += `<div class="question-box"><b>😀 Emojiyle anlat</b><p class="small" style="margin:7px 0 0">${narrator?'Her 8 saniyede sıradaki kutu açılır. Yalnızca açık kutu için bir emoji seç; seçimin dinleyenlerin ekranına anında gider.':'Anlatıcının seçtiği emojileri takip ederek karakteri tahmin et. Yeni emoji her 8 saniyede bir görünür.'}</p><div id="denEmojiClock" class="small" style="margin-top:7px">Sıradaki emoji: ${Math.min(active+1,DEN_EMOJI_SLOTS)} / ${DEN_EMOJI_SLOTS} · ${seconds} saniye kaldı</div></div>`;
+        h += `<div class="den-emoji-slots">${Array.from({length:DEN_EMOJI_SLOTS},(_,i)=>`<div class="den-emoji-slot ${i===active?'active':''}"><span class="slot-num">${i+1}</span>${D.emojiSlots?.[i] || '❔'}<span class="slot-status">${D.emojiSlots?.[i]?'SEÇİLDİ':i===active?'ŞİMDİ':'BEKLE'}</span></div>`).join('')}</div>`;
+        if (narrator) { const chosen = !!D.emojiSlots?.[active]; h += `<div class="section-title">🧩 Emoji kütüphanesi</div><p class="small">Bir emojiyi tıkla. Seçtiğin emoji yalnızca aktif kutuya yerleşir; aynı kutu ikinci kez değiştirilemez.</p><div class="den-emoji-library">${DEN_EMOJI_LIBRARY.map(e=>`<button type="button" class="den-emoji-pick secondary" data-den-emoji="${e}" ${chosen?'disabled':''} aria-label="Emoji ${e}">${e}</button>`).join('')}</div>`; }
+      }
+      if (playing && !narrator && !D.solved.includes(me)) h += `<form id="denGuessForm" class="den-guess-form"><input id="denGuessInput" placeholder="Karakter tahminin…" maxlength="80" autocomplete="off" ${Date.now()<denLocalCooldownUntil?'disabled':''}><button id="denGuessBtn" type="submit" ${Date.now()<denLocalCooldownUntil?'disabled':''}>Tahmin Et</button></form><div id="denFeedback" class="den-feedback">${esc(denFeedback)}</div>`;
+      else if (playing && !narrator && D.solved.includes(me)) h += `<div class="result-box win">✓ Doğru bildin! ${D.style==='emoji'?'Emoji turunun tamamlanması bekleniyor.':D.style==='draw'?'Çizim turu tamamlanıyor.':'Diğer oyuncuların tahminleri bekleniyor.'}</div>`;
+      else if (narrator && playing && D.style !== 'emoji') h += `<div class="den-feedback">Diğer oyuncular tahmin ediyor. Cevabı söyleme!</div>`;
+      if (D.phase === 'vote' && D.style === 'voice') {
+        const votes = D.violationVotes || [], hasVoted = votes.includes(me), listeners = D.ids.filter(id => id !== D.narratorId).length;
+        h += `<div class="question-box" style="margin-top:12px"><b>🗳️ Yasaklı kelime oylaması · ${seconds} saniye</b><p class="small" style="margin:8px 0">Discord'da anlatımı dinlerken anlatıcının yasaklı kelime kullandığını duyduysan aşağıdaki butona bas. Oylama yalnızca dinleyen oyuncular içindir; çoğunluk onaylarsa anlatıcı bu tur puan alamaz.</p><div class="small">Oy: ${votes.length}/${listeners} · Anlatıcının puan almaması için gereken oy: ${D.voteRequired || Math.floor(listeners/2)+1}</div>${!narrator ? `<button id="denViolationVote" class="${hasVoted?'secondary':'danger'}" style="margin-top:10px" ${hasVoted?'disabled':''}>${hasVoted?'✓ Oy kullandın':'🚫 Yasaklı kelime kullanımı'}</button>` : '<p class="small" style="margin-top:8px">Dinleyen oyuncuların oylaması bekleniyor.</p>'}</div>`;
+      }
+      if (D.phase === 'reveal') h += `<div class="result-box ${D.correctOrder.length?'win':'lose'}" style="margin-top:12px"><b>Tur tamamlandı!</b><div style="font-size:1.4rem;color:var(--straw);margin:8px 0">${esc(D.answer || (isHost ? D.character : 'Bilinmeyen karakter'))}</div><div class="small">Doğru bilen: ${D.correctOrder.length ? D.correctOrder.map((id,i)=>`${i+1}. ${esc(D.names[id])}`).join(' · ') : 'Kimse bilemedi.'}</div><div class="small" style="margin-top:8px">${D.style!=='voice' ? `${D.style==='draw'?'Çizim':'Emoji'} turu tamamlandı. Anlatıcı +${D.correctOrder.length * D.ids.length * (Number(D.narratorMultiplier)||6)} puan aldı (${D.ids.length} oyuncu × ${D.narratorMultiplier} × ${D.correctOrder.length}).` : D.violationPassed ? `🚫 Yasaklı kelime oylaması kabul edildi (${(D.violationVotes||[]).length}/${D.ids.length-1}). Anlatıcı bu tur puan alamadı.` : `Yasaklı kelime oylaması kabul edilmedi. Anlatıcı +${D.correctOrder.length * D.ids.length * (Number(D.narratorMultiplier)||6)} puan aldı (${D.ids.length} oyuncu × ${D.narratorMultiplier} × ${D.correctOrder.length}).`}</div>${isHost?'<button id="denNext" class="success" style="margin-top:12px">Sonraki Tur</button>':'<p class="small" style="margin-top:10px">Kaptan sonraki turu başlatacak.</p>'}</div>`;
+      h += `<div class="section-title" style="margin-top:18px">🏆 Puan tablosu</div>${D.ids.slice().sort((a,b)=>(D.scores[b]||0)-(D.scores[a]||0)).map(id=>`<div class="den-score-row"><span>${esc(D.names[id]||'Korsan')}${id===me?' (Sen)':''}${id===D.narratorId?' · Anlatıcı':''}</span><span class="pts">${Number(D.scores[id]||0)} puan</span></div>`).join('')}`;
+      if (D.log?.length) h += `<div class="lobby-section"><div class="section-title">📜 Tur günlüğü</div>${D.log.slice(0,8).map(line=>`<div class="small" style="padding:5px 0">${esc(line)}</div>`).join('')}</div>`;
+      view.innerHTML = h;
+      const leave = document.getElementById('denLeave'); if (leave) leave.onclick = () => document.getElementById('btnLeave').onclick();
+      const form = document.getElementById('denGuessForm'); if (form) form.onsubmit = e => { e.preventDefault(); const field=document.getElementById('denGuessInput'); const guess=field?.value.trim()||''; if(!guess) return; denAct({t:'guess',guess}); denFeedback='Tahminin kontrol ediliyor…'; if(field) field.value=''; const btn=document.getElementById('denGuessBtn'); if(btn) btn.disabled=true; if(field) field.disabled=true; };
+      const next = document.getElementById('denNext'); if (next) next.onclick = () => denAct({t:'next'});
+      const vote = document.getElementById('denViolationVote'); if (vote) vote.onclick = () => denAct({t:'violation_vote'});
+      document.querySelectorAll('[data-den-emoji]').forEach(btn => btn.onclick = () => denAct({t:'emoji_pick', emoji:btn.dataset.denEmoji}));
+      document.querySelectorAll('[data-den-choose]').forEach(btn => btn.onclick = () => denAct({t:'choose_style', style:btn.dataset.denChoose}));
+      denSetupCanvas(narrator && playing && D.style === 'draw');
+    }
+
+    // ========== NAKAMA MÜZAYEDESİ ==========
+    const auRnd = n => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+    function auShuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = auRnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+    const auEsc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    function auGive(p, c, price, why) {
+      AS.team[p].push(c); AS.money[p] -= price; AS.i++;
+      AS.last = { name: c, to: p, price };
+      AS.log.unshift(`${AS.names[p]} → ${c} (${price}$)${why ? ' · ' + why : ''}`);
+    }
+    function auAfterGive() {
+      if (AS.secret) AS.phase = 'reveal';
+      else auNext();
+    }
+    function auNext() {
+      while (true) {
+        if ((AS.team[0].length >= 5 && AS.team[1].length >= 5) || AS.i >= AS.deck.length) { AS.phase = 'end'; return; }
+        const c = AS.deck[AS.i], full = AS.team.map(t => t.length >= 5), z = AS.money.map(m => m === 0);
+        if (full[0] || full[1]) { auGive(full[0] ? 1 : 0, c, 0, 'kadro dolu, bedava'); if (AS.secret) { AS.phase = 'reveal'; return; } continue; }
+        if (z[0] && z[1]) { auGive(AS.opener, c, 0, 'iki taraf da parasız, sırayla'); AS.opener ^= 1; if (AS.secret) { AS.phase = 'reveal'; return; } continue; }
+        if (z[0] || z[1]) { AS.phase = 'choose'; AS.chooser = z[0] ? 1 : 0; return; }
+        AS.phase = 'bid'; AS.bid = null; AS.turn = AS.opener; return;
+      }
+    }
+    function auResolve() { auGive(AS.bid.by, AS.deck[AS.i], AS.bid.amount); AS.opener ^= 1; auAfterGive(); }
+    function auNewGame(ids, names) {
+      const deck = auShuffle(CHARACTERS).slice(0, 10);
+      AS = { phase: 'bid', ids, names, money: [20, 20], team: [[], []], deck, i: 0, opener: auRnd(2), bid: null, turn: 0, chooser: null, log: [],
+        secret: mode === 'secret', last: null,
+        hints: deck.map(c => { const clues = buildHints(c); return clues[auRnd(clues.length)] || 'Korsan dünyasıyla bağlantılı'; }) };
+      auNext(); auPush();
+    }
+    function auStart() {
+      const live = [];
+      Object.values(gameChannel.presenceState()).forEach(arr => arr.forEach(p => { if (!live.some(x => x.id === p.id)) live.push(p); }));
+      const other = live.find(p => p.id !== myId);
+      if (!other) return;
+      auNewGame([myId, other.id], [myName, other.name]);
+    }
+    function auApply(p, a) {
+      if (!AS) return;
+      if (a.t === 'bid' && AS.phase === 'bid' && AS.turn === p) {
+        const x = parseInt(a.v, 10);
+        if (!(x > (AS.bid ? AS.bid.amount : 0) && x <= AS.money[p])) return;
+        AS.bid = { amount: x, by: p }; AS.log.unshift(`${AS.names[p]} teklif: ${x}$`);
+        if (AS.money[p ^ 1] <= x) auResolve(); else AS.turn = p ^ 1;
+      } else if (a.t === 'pass' && AS.phase === 'bid' && AS.turn === p && AS.bid) {
+        auResolve();
+      } else if (a.t === 'choose' && AS.phase === 'choose' && AS.chooser === p) {
+        auGive(a.take ? p : p ^ 1, AS.deck[AS.i], 0, 'seçim'); AS.opener ^= 1; auAfterGive();
+      } else if (a.t === 'continue' && AS.secret && AS.phase === 'reveal') {
+        auNext();
+      } else return;
+      auPush();
+    }
+    function auPush() {
+      // Secret modda henüz açılmamış karakterlerin adı diğer oyunculara gönderilmez
+      const pub = AS.secret ? { ...AS, deck: AS.deck.map((c, i) => i < AS.i ? c : null), hints: AS.hints.map((h, i) => AS.phase !== 'reveal' && i === AS.i ? h : null) } : AS;
+      broadcast('au_state', { AS: pub }); auRender();
+    }
+    function auAct(a) { if (isHost) auApply(0, a); else broadcast('au_act', { a }); }
+
+    function auRender() {
+      if (!AS) return;
+      gameState = 'auction'; show('auction');
+      const me = AS.ids.indexOf(myId), v = document.getElementById('auView');
+      let h = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div><strong>Oda:</strong> <span style="color:var(--straw); font-size:1.35rem; font-family:'Pirata One',cursive;">${roomCode}</span></div>
+        <button id="auLeave" class="secondary" style="width:auto; padding:7px 12px; font-size:0.85rem; margin:0;">← Lobiye Dön</button></div>`;
+      h += '<div class="au-sides">';
+      for (let p = 0; p < 2; p++) {
+        const active = (AS.phase === 'bid' && AS.turn === p) || (AS.phase === 'choose' && AS.chooser === p);
+        h += `<div class="au-side ${p === me ? 'me' : ''} ${active ? 'turn' : ''}"><h3>${auEsc(AS.names[p])}${p === me ? ' (Sen)' : ''}</h3><div class="au-money">${AS.money[p]}$</div>`;
+        for (let k = 0; k < 5; k++) { const c = AS.team[p][k]; h += `<div class="au-slot ${c ? 'f' : ''}">${c ? charImgHtml(c, true) + '<span>' + auEsc(c) + '</span>' : '—'}</div>`; }
+        h += '</div>';
+      }
+      h += '</div>';
+      if (AS.phase === 'end') {
+        h += '<div class="au-char">Draft bitti!</div><p class="au-mid">Kadrolara bakın, kim daha güçlü?</p>';
+        if (isHost) h += '<button id="auAgain">Yeni Oyun</button>';
+      } else {
+        if (AS.secret && AS.phase === 'reveal' && AS.last) {
+          h += `<div class="au-mid">Karakter Açıldı • ${AS.i} / ${AS.deck.length}</div>${charImgHtml(AS.last.name)}<div class="au-char">${auEsc(AS.last.name)}</div><p class="au-mid">${auEsc(AS.names[AS.last.to])} aldı • ${AS.last.price ? AS.last.price + '$' : 'Bedava'}</p>`;
+          h += '<button id="auContinue" style="margin-top:10px;">Sonraki Karakter</button>';
+        } else if (AS.secret) {
+          h += `<div class="au-mid">Gizli Karakter ${AS.i + 1} / ${AS.deck.length}</div><div class="char-img-box"><div class="char-img-ph" style="font-size:6rem;">❓</div></div><div class="au-char">???</div><p class="au-mid">💡 ${auEsc(AS.hints[AS.i] || 'İpucu hazırlanıyor...')}</p>`;
+        } else {
+          for (let k = 0; k < 3; k++) if (AS.deck[AS.i + k]) getCharImg(AS.deck[AS.i + k]);
+          h += `<div class="au-mid">Karakter ${AS.i + 1} / ${AS.deck.length}</div>${charImgHtml(AS.deck[AS.i])}<div class="au-char">${auEsc(AS.deck[AS.i])}</div>`;
+        }
+        if (AS.phase === 'bid') {
+          const cur = AS.bid ? AS.bid.amount : 0;
+          h += `<p class="au-mid">${AS.bid ? `Son teklif: <b>${cur}$</b> (${auEsc(AS.names[AS.bid.by])})` : `Açılış: ${auEsc(AS.names[AS.opener])} en az 1$ vermek zorunda`}</p>`;
+          if (AS.turn === me) {
+            h += `<input id="auAmt" type="number" min="${cur + 1}" max="${AS.money[me]}" value="${cur + 1}" style="margin-top:8px;"><div class="au-row"><button id="auBid">Teklif Ver</button>${AS.bid ? '<button id="auPass" class="secondary">Artırmıyorum</button>' : ''}</div>`;
+          } else h += `<p class="au-mid" style="margin-top:8px;">${auEsc(AS.names[AS.turn])} düşünüyor...</p>`;
+        } else if (AS.phase === 'choose') {
+          h += `<p class="au-mid">${auEsc(AS.names[AS.chooser ^ 1])}'in parası bitti. ${auEsc(AS.names[AS.chooser])} karar veriyor (bedava).</p>`;
+          if (AS.chooser === me) h += '<div class="au-row" style="margin-top:8px;"><button id="auTake">Ben alayım</button><button id="auGive" class="secondary">Sen al</button></div>';
+        }
+      }
+      h += '<div class="au-log">' + AS.log.map(l => `<div>${auEsc(l)}</div>`).join('') + '</div>';
+      v.innerHTML = h;
+      hydrateImgs(v);
+      const g = id => document.getElementById(id);
+      g('auLeave').onclick = () => document.getElementById('btnLeave').onclick();
+      if (g('auBid')) g('auBid').onclick = () => auAct({ t: 'bid', v: g('auAmt').value });
+      if (g('auPass')) g('auPass').onclick = () => auAct({ t: 'pass' });
+      if (g('auTake')) g('auTake').onclick = () => auAct({ t: 'choose', take: true });
+      if (g('auGive')) g('auGive').onclick = () => auAct({ t: 'choose', take: false });
+      if (g('auAgain')) g('auAgain').onclick = () => { if (isHost) auNewGame(AS.ids, AS.names); };
+      if (g('auContinue')) g('auContinue').onclick = () => auAct({ t: 'continue' });
+    }
+
+    initLobby();
+
+    // ========== GRAND LINE AUDIO ==========
+    const bgMusic = document.getElementById('bgMusic');
+    const btnMute = document.getElementById('btnMute');
+    const volumeSlider = document.getElementById('volume-slider');
+    let isMuted = false;
+    let savedVolume = 0.35;
+    let ambientContext = null, ambientMaster = null, ambientStarted = false;
+    bgMusic.volume = 0.35;
+
+    // If the optional local MP3 is not packaged with the HTML, create a quiet procedural sea-at-night ambience.
+    // Browsers only allow this after a user gesture; no external audio file is required.
+    function startAmbient() {
+      if (isMuted) return;
+      if (ambientStarted) { if (ambientContext && ambientContext.state === 'suspended') ambientContext.resume().catch(() => {}); return; }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      try {
+        ambientContext = ambientContext || new AC();
+        if (ambientContext.state === 'suspended') ambientContext.resume();
+        ambientMaster = ambientMaster || ambientContext.createGain();
+        ambientMaster.gain.value = (parseFloat(volumeSlider.value) || 0) * 0.045;
+        ambientMaster.connect(ambientContext.destination);
+        [55, 82.41, 110].forEach((freq, i) => {
+          const osc = ambientContext.createOscillator();
+          const gain = ambientContext.createGain();
+          const lfo = ambientContext.createOscillator();
+          const lfoGain = ambientContext.createGain();
+          osc.type = i === 1 ? 'triangle' : 'sine';
+          osc.frequency.value = freq;
+          gain.gain.value = [0.30, 0.12, 0.07][i];
+          lfo.frequency.value = 0.07 + i * 0.025;
+          lfoGain.gain.value = 0.035;
+          lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+          osc.connect(gain); gain.connect(ambientMaster);
+          osc.start(); lfo.start();
+        });
+        // A soft filtered noise layer suggests distant wind and sea, not a loud effect.
+        const length = Math.floor(ambientContext.sampleRate * 3);
+        const buffer = ambientContext.createBuffer(1, length, ambientContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+        const noise = ambientContext.createBufferSource(); noise.buffer = buffer; noise.loop = true;
+        const filter = ambientContext.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 240;
+        const noiseGain = ambientContext.createGain(); noiseGain.gain.value = 0.08;
+        noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(ambientMaster); noise.start();
+        ambientStarted = true;
+      } catch (e) { /* Audio is an enhancement; the game remains playable without it. */ }
+    }
+    function syncAudio() {
+      const vol = isMuted ? 0 : Math.max(0, Math.min(1, parseFloat(volumeSlider.value) || 0));
+      bgMusic.volume = vol;
+      if (ambientMaster && ambientContext) ambientMaster.gain.setTargetAtTime(vol * 0.045, ambientContext.currentTime, 0.15);
+      btnMute.textContent = vol === 0 ? '🔇' : '🔊';
+      btnMute.title = vol === 0 ? 'Sesi aç' : 'Sesi sustur';
+    }
+    function tryPlayMusic() {
+      bgMusic.play().catch(() => { /* local MP3 missing or autoplay blocked; fallback starts on user gesture */ });
+    }
+    tryPlayMusic();
+    document.body.addEventListener('click', function startSoundOnce() {
+      if (!isMuted) {
+        bgMusic.play().catch(() => startAmbient());
+        if (bgMusic.error || !bgMusic.querySelector('source')?.getAttribute('src')) startAmbient();
+      }
+      document.body.removeEventListener('click', startSoundOnce);
+    }, { once: true });
+    bgMusic.addEventListener('error', startAmbient);
+    btnMute.onclick = (e) => {
+      e.stopPropagation();
+      isMuted = !isMuted;
+      if (isMuted) {
+        savedVolume = Math.max(0.05, parseFloat(volumeSlider.value) || savedVolume);
+        volumeSlider.value = 0;
+      } else {
+        volumeSlider.value = savedVolume || 0.35;
+        if (bgMusic.paused) bgMusic.play().catch(() => startAmbient());
+        startAmbient();
+      }
+      syncAudio();
+    };
+    volumeSlider.oninput = () => {
+      const vol = parseFloat(volumeSlider.value);
+      isMuted = vol === 0;
+      if (vol > 0) savedVolume = vol;
+      if (vol > 0 && bgMusic.paused) bgMusic.play().catch(() => startAmbient());
+      if (vol > 0 && !ambientStarted && (bgMusic.error || !bgMusic.querySelector('source')?.getAttribute('src'))) startAmbient();
+      syncAudio();
+    };
+  </script>
+</body>
+</html>
