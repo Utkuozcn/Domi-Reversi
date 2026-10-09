@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domi Reversi - One Piece Casus Oyunu</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Roboto:wght@400;500;700&display=swap');
+
+    :root {
+      --straw: #f5c542;
+      --straw-dark: #d4a017;
+      --sea: #1a6b9a;
+      --pirate-red: #c41e3a;
+      --text: #fff8e7;
+      --muted: #c9b89a;
+      --card-bg: rgba(20, 30, 48, 0.88);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Roboto', system-ui, sans-serif;
+      background: #0a1628;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 12px;
+    }
+
+    body.lobby-mode {
+      background: url('onepiece-bg.png') center center / cover no-repeat fixed;
+    }
+    body.lobby-mode::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(10,22,40,0.5) 0%, rgba(10,22,40,0.78) 100%);
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 460px;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      font-family: 'Pirata One', cursive;
+      text-align: center;
+      font-size: 2.6rem;
+      color: var(--straw);
+      text-shadow: 3px 3px 0 #000, 0 0 20px rgba(245,197,66,0.5);
+      margin-bottom: 2px;
+      letter-spacing: 2px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 22px;
+      text-shadow: 1px 1px 3px #000;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 14px;
+      border: 2px solid var(--straw-dark);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 30px rgba(245,197,66,0.05);
+    }
+
+    input, button, textarea {
+      width: 100%;
+      padding: 13px 15px;
+      border-radius: 10px;
+      border: 2px solid #3a4a5c;
+      background: rgba(10, 20, 35, 0.9);
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--straw);
+      box-shadow: 0 0 0 3px rgba(245,197,66,0.25);
+    }
+    input::placeholder { color: #7a8a9a; }
+
+    button {
+      background: linear-gradient(180deg, var(--straw) 0%, var(--straw-dark) 100%);
+      color: #1a1200;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: transform 0.15s, filter 0.15s;
+      box-shadow: 0 4px 0 #9a7b12;
+    }
+    button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    button:active { transform: translateY(1px); box-shadow: 0 2px 0 #9a7b12; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    button.success {
+      background: linear-gradient(180deg, #3ecf6a 0%, #2a9d4a 100%);
+      box-shadow: 0 4px 0 #1e7a35;
+      color: #041a0c;
+    }
+    button.secondary {
+      background: linear-gradient(180deg, #4a5a6c 0%, #2f3a48 100%);
+      box-shadow: 0 4px 0 #1c2430;
+      color: var(--text);
+    }
+
+    .player-list, .room-list { list-style: none; margin: 12px 0; }
+    .player-list li, .room-list li {
+      padding: 11px 14px;
+      background: rgba(10,20,35,0.7);
+      border-radius: 10px;
+      margin-bottom: 7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #2a3a4c;
+    }
+    .player-list li.host::after {
+      content: "KAPTAN";
+      font-size: 0.68rem;
+      background: var(--straw);
+      color: #1a1200;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .room-list li { cursor: pointer; transition: all 0.15s; }
+    .room-list li:hover {
+      border-color: var(--straw);
+      background: rgba(245,197,66,0.1);
+    }
+    .room-code { font-weight: 700; color: var(--straw); font-size: 1.15rem; }
+    .room-meta { font-size: 0.8rem; color: var(--muted); }
+
+    .role-box {
+      background: rgba(10,20,35,0.8);
+      border: 3px solid var(--straw);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      margin: 12px 0;
+      position: relative;
+    }
+    .role-box.spy { border-color: var(--pirate-red); }
+    .role-box h2 {
+      font-family: 'Pirata One', cursive;
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+      color: var(--straw);
+    }
+    .role-box.spy h2 { color: #ff6b6b; }
+
+    .notes { height: 120px; resize: vertical; }
+    .vote-counter {
+      text-align: center;
+      font-size: 1.1rem;
+      margin: 10px 0;
+      color: var(--straw);
+      font-weight: 700;
+    }
+    .hidden { display: none !important; }
+    .status { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+    .result-box {
+      text-align: center;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .result-box.win {
+      background: rgba(46, 160, 80, 0.25);
+      border: 2px solid #3ecf6a;
+    }
+    .result-box.lose {
+      background: rgba(192, 40, 40, 0.25);
+      border: 2px solid #e04545;
+    }
+    .vote-options button {
+      margin-bottom: 8px;
+      background: linear-gradient(180deg, #3a4a5c 0%, #2a3545 100%);
+      box-shadow: 0 3px 0 #1a2230;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .vote-options button:hover {
+      background: linear-gradient(180deg, var(--straw) 0%, var(--straw-dark) 100%);
+      color: #1a1200;
+    }
+    .small { font-size: 0.85rem; color: var(--muted); }
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 16px 0 8px;
+      color: var(--straw);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .empty-rooms {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px;
+      font-size: 0.9rem;
+    }
+    .wanted-label {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--straw-dark);
+      color: #1a1200;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* Audio controls - top right */
+    #audio-controls {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20, 30, 48, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 12px;
+      border-radius: 30px;
+      border: 1px solid var(--straw-dark);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    #audio-controls button {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      margin: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: none;
+      background: rgba(245, 197, 66, 0.2);
+      color: var(--straw);
+      border: 1px solid var(--straw-dark);
+      text-transform: none;
+    }
+    #audio-controls button:hover {
+      background: var(--straw);
+      color: #1a1200;
+      transform: none;
+    }
+    #volume-slider {
+      width: 80px;
+      height: 6px;
+      margin: 0;
+      padding: 0;
+      accent-color: var(--straw);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+    }
+  </style>
+</head>
+<body class="lobby-mode">
+  <!-- Background Music -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="drums-of-liberation.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Audio Controls (top right) -->
+  <div id="audio-controls">
+    <button id="btnMute" title="Sustur / Aç">🔊</button>
+    <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.35" title="Ses seviyesi">
+  </div>
+
+  <div class="container">
+    <h1>Domi Reversi</h1>
+    <p class="subtitle">One Piece Casus Oyunu</p>
+
+    <div id="lobby" class="card">
+      <input id="playerName" placeholder="Korsan adın..." maxlength="16" />
+      <button id="btnCreate" class="success">Yeni Oda Oluştur</button>
+
+      <div class="section-title">Aktif Odalar</div>
+      <ul class="room-list" id="roomList">
+        <li class="empty-rooms">Şu an aktif oda yok.<br>Bir tane oluştur, nakamalarını çağır!</li>
+      </ul>
+
+      <div class="section-title">veya kod ile katıl</div>
+      <div style="display:flex; gap:8px;">
+        <input id="roomCodeInput" placeholder="Oda Kodu" maxlength="6" style="text-transform:uppercase; flex:1; margin-bottom:0;" />
+        <button id="btnJoinCode" class="secondary" style="width:auto; min-width:90px; margin-bottom:0;">Katıl</button>
+      </div>
+      <p class="status" id="lobbyStatus"></p>
+    </div>
+
+    <div id="room" class="card hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+          <strong>Oda:</strong> <span id="roomCodeDisplay" style="color:var(--straw); font-size:1.35rem; font-family:'Pirata One',cursive;"></span>
+        </div>
+        <button id="btnLeave" class="secondary" style="width:auto; padding:7px 12px; font-size:0.85rem; margin:0;">Ayrıl</button>
+      </div>
+      <p class="small">Mürettebat (3-8 kişi):</p>
+      <ul class="player-list" id="playerList"></ul>
+      <button id="btnStart" class="success hidden">Oyunu Başlat</button>
+      <p class="status" id="roomStatus">Kaptan oyunu başlatana kadar bekleyin...</p>
+    </div>
+
+    <div id="game" class="card hidden">
+      <div id="roleBox" class="role-box">
+        <div class="wanted-label" id="roleLabel">BİLGİ</div>
+        <p class="small" style="margin-top:8px;">Senin bilgin:</p>
+        <h2 id="roleText">...</h2>
+        <p id="roleSub" class="small"></p>
+      </div>
+
+      <label class="small">Not Defteri (sadece sen görürsün)</label>
+      <textarea id="notes" class="notes" placeholder="Şüpheli nakamalar, ipuçları..."></textarea>
+
+      <div class="vote-counter" id="voteCounter">Oylama Başlat: 0 / ?</div>
+      <button id="btnVoteStart">Oylama Başlat</button>
+
+      <div id="votingArea" class="hidden">
+        <p style="margin:12px 0 8px; font-weight:600; color:var(--straw);">Casus kim?</p>
+        <div class="vote-options" id="voteOptions"></div>
+      </div>
+
+      <div id="resultArea" class="hidden"></div>
+      <button id="btnNewRound" class="success hidden" style="margin-top:12px;">Yeni Tur</button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://tssumggdsbcjdhmfphlg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_2Y60SRvr2Q2_Bb7Sa1gaVw_b0PM6o-J';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const CHARACTERS = [
+      "Monkey D. Luffy","Roronoa Zoro","Nami","Usopp","Sanji","Tony Tony Chopper","Nico Robin","Franky","Brook","Jinbe",
+      "Portgas D. Ace","Sabo","Shanks","Buggy","Dracule Mihawk","Boa Hancock","Trafalgar Law","Eustass Kid","Killer","X Drake",
+      "Basil Hawkins","Jewelry Bonney","Capone Bege","Scratchmen Apoo","Urouge","Marshall D. Teach","Shiryu","Jesus Burgess",
+      "Edward Newgate","Marco","Vista","Jozu","Kaido","King","Queen","Jack","Yamato",
+      "Charlotte Linlin","Charlotte Katakuri","Charlotte Smoothie","Charlotte Cracker","Charlotte Perospero",
+      "Donquixote Doflamingo","Trebol","Diamante","Pica","Vergo","Sugar","Crocodile","Daz Bones","Bentham",
+      "Monkey D. Garp","Sengoku","Sakazuki","Borsalino","Kuzan","Issho","Rob Lucci","Kaku",
+      "Silvers Rayleigh","Gol D. Roger","Kozuki Oden","Kozuki Momonosuke","Kin'emon","Kikunojo",
+      "Inuarashi","Nekomamushi","Carrot","Vivi","Enel","Arlong","Bartholomew Kuma","Gecko Moria","Perona",
+      "Hody Jones","Shirahoshi","Fisher Tiger"
+    ];
+
+    const GENERAL_INFOS = [
+      "Devil Fruit kullanıcısı","Haki kullanabiliyor","Ödülü var (bounty sahibi)",
+      "Erkek ve kılıç kullanıyor","Kadın karakter","Denizci (Marine)","Korsan (Pirate)",
+      "Hasır Şapka ile bağlantılı","Yonko veya eski Yonko mürettebatı","Shichibukai / eski Warlord",
+      "Supernova / Worst Generation","Wano ile bağlantılı","Balıkadam veya deniz ırkı",
+      "Devil Fruit yok","Logia tipi Devil Fruit","Paramecia tipi Devil Fruit","Zoan tipi Devil Fruit",
+      "Amiral veya eski amiral","Devrimci Ordu üyesi"
+    ];
+
+    let lobbyChannel = null, gameChannel = null;
+    let myId = crypto.randomUUID(), myName = '', roomCode = '', isHost = false;
+    let players = {}, gameState = 'lobby', spyId = null;
+    let voteStartCount = 0, votedPlayers = new Set(), myVote = null, votes = {};
+    let activeRooms = {};
+
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      return code;
+    }
+    function majorityNeeded(n) { return Math.floor(n / 2) + 1; }
+    function show(id) {
+      ['lobby','room','game'].forEach(s => document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.body.classList.toggle('lobby-mode', id === 'lobby');
+    }
+
+    function broadcast(event, payload) {
+      if (!gameChannel) return;
+      gameChannel.send({ type: 'broadcast', event, payload: { ...payload, from: myId } });
+    }
+
+    function updatePlayerList() {
+      const ul = document.getElementById('playerList');
+      ul.innerHTML = '';
+      const ids = Object.keys(players);
+      ids.forEach(id => {
+        const p = players[id];
+        const li = document.createElement('li');
+        li.textContent = p.name + (id === myId ? ' (Sen)' : '');
+        if (p.isHost) li.classList.add('host');
+        ul.appendChild(li);
+      });
+      const btnStart = document.getElementById('btnStart');
+      if (isHost && ids.length >= 3 && ids.length <= 8) btnStart.classList.remove('hidden');
+      else btnStart.classList.add('hidden');
+      document.getElementById('roomStatus').textContent =
+        ids.length < 3 ? `En az 3 kişi gerekli (${ids.length}/3)` :
+        ids.length > 8 ? 'Maksimum 8 kişi!' : 'Kaptan oyunu başlatabilir.';
+
+      if (isHost && lobbyChannel) {
+        lobbyChannel.track({ id: myId, name: myName, roomCode, playerCount: ids.length, isHost: true });
+      }
+    }
+
+    function updateRoomList() {
+      const ul = document.getElementById('roomList');
+      const codes = Object.keys(activeRooms);
+      if (codes.length === 0) {
+        ul.innerHTML = '<li class="empty-rooms">Şu an aktif oda yok.<br>Bir tane oluştur, nakamalarını çağır!</li>';
+        return;
+      }
+      ul.innerHTML = '';
+      codes.forEach(code => {
+        const r = activeRooms[code];
+        const li = document.createElement('li');
+        li.innerHTML = `<div><div class="room-code">${code}</div><div class="room-meta">${r.hostName} • ${r.playerCount} oyuncu</div></div>
+          <button class="secondary" style="width:auto;padding:6px 12px;margin:0;font-size:0.8rem;">Katıl</button>`;
+        li.onclick = () => joinRoom(code);
+        ul.appendChild(li);
+      });
+    }
+
+    async function initLobby() {
+      lobbyChannel = supabaseClient.channel('domi:lobby', { config: { presence: { key: myId } } });
+      lobbyChannel.on('presence', { event: 'sync' }, () => {
+        const state = lobbyChannel.presenceState();
+        activeRooms = {};
+        Object.values(state).forEach(arr => {
+          arr.forEach(p => {
+            if (p.roomCode && p.isHost) {
+              activeRooms[p.roomCode] = { hostName: p.name, playerCount: p.playerCount || 1, hostId: p.id };
+            }
+          });
+        });
+        updateRoomList();
+      }).subscribe();
+    }
+
+    async function joinRoom(code, asHost = false) {
+      myName = document.getElementById('playerName').value.trim();
+      if (!myName) { alert('Önce korsan adını yaz!'); return; }
+
+      roomCode = code.toUpperCase();
+      isHost = asHost;
+      if (gameChannel) await gameChannel.unsubscribe();
+
+      gameChannel = supabaseClient.channel(`domi:room:${roomCode}`, {
+        config: { presence: { key: myId }, broadcast: { self: true } }
+      });
+
+      gameChannel
+        .on('presence', { event: 'sync' }, () => {
+          const state = gameChannel.presenceState();
+          players = {};
+          Object.values(state).forEach(arr => {
+            arr.forEach(p => { players[p.id] = { name: p.name, isHost: p.isHost }; });
+          });
+          updatePlayerList();
+        })
+        .on('broadcast', { event: 'game_start' }, ({ payload }) => handleGameStart(payload))
+        .on('broadcast', { event: 'vote_start_press' }, ({ payload }) => handleVoteStartPress(payload))
+        .on('broadcast', { event: 'vote_cast' }, ({ payload }) => handleVoteCast(payload))
+        .on('broadcast', { event: 'new_round' }, () => {
+          gameState = 'room';
+          show('room');
+          document.getElementById('roomStatus').textContent = 'Yeni tur için kaptan başlatabilir.';
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await gameChannel.track({ id: myId, name: myName, isHost });
+            if (isHost && lobbyChannel) {
+              await lobbyChannel.track({ id: myId, name: myName, roomCode, playerCount: 1, isHost: true });
+            }
+            document.getElementById('roomCodeDisplay').textContent = roomCode;
+            show('room');
+          }
+        });
+    }
+
+    function handleGameStart(payload) {
+      spyId = payload.spyId;
+      voteStartCount = 0; votedPlayers = new Set(); votes = {}; myVote = null;
+
+      const isSpy = myId === spyId;
+      const roleBox = document.getElementById('roleBox');
+      const roleLabel = document.getElementById('roleLabel');
+
+      if (isSpy) {
+        roleBox.classList.add('spy');
+        roleLabel.textContent = 'CASUS';
+        roleLabel.style.background = 'var(--pirate-red)';
+        roleLabel.style.color = '#fff';
+        document.getElementById('roleText').textContent = payload.generalInfo;
+        document.getElementById('roleSub').textContent = 'Sen CASUSSUN! Bu genel bilgiyle uydur.';
+      } else {
+        roleBox.classList.remove('spy');
+        roleLabel.textContent = 'KARAKTER';
+        roleLabel.style.background = 'var(--straw-dark)';
+        roleLabel.style.color = '#1a1200';
+        document.getElementById('roleText').textContent = payload.character;
+        document.getElementById('roleSub').textContent = 'Herkes aynı karakteri biliyor. Casusu bul!';
+      }
+
+      document.getElementById('notes').value = '';
+      document.getElementById('votingArea').classList.add('hidden');
+      document.getElementById('resultArea').classList.add('hidden');
+      document.getElementById('btnNewRound').classList.add('hidden');
+      document.getElementById('btnVoteStart').disabled = false;
+      document.getElementById('btnVoteStart').textContent = 'Oylama Başlat';
+      document.getElementById('voteCounter').textContent = `Oylama Başlat: 0 / ${majorityNeeded(Object.keys(players).length)}`;
+      show('game');
+      gameState = 'game';
+    }
+
+    function handleVoteStartPress(payload) {
+      if (gameState !== 'game') return;
+      votedPlayers.add(payload.from);
+      voteStartCount = votedPlayers.size;
+      const needed = majorityNeeded(Object.keys(players).length);
+      document.getElementById('voteCounter').textContent = `Oylama Başlat: ${voteStartCount} / ${needed}`;
+      if (voteStartCount >= needed) startVoting();
+    }
+
+    function startVoting() {
+      gameState = 'voting';
+      document.getElementById('btnVoteStart').disabled = true;
+      document.getElementById('btnVoteStart').textContent = 'Oylama başladı!';
+      document.getElementById('votingArea').classList.remove('hidden');
+      const opts = document.getElementById('voteOptions');
+      opts.innerHTML = '';
+      Object.entries(players).forEach(([id, p]) => {
+        if (id === myId) return;
+        const btn = document.createElement('button');
+        btn.textContent = p.name;
+        btn.onclick = () => castVote(id);
+        opts.appendChild(btn);
+      });
+    }
+
+    function castVote(targetId) {
+      if (myVote) return;
+      myVote = targetId;
+      broadcast('vote_cast', { targetId });
+      document.querySelectorAll('#voteOptions button').forEach(b => b.disabled = true);
+    }
+
+    function handleVoteCast(payload) {
+      votes[payload.from] = payload.targetId;
+      if (Object.keys(votes).length >= Object.keys(players).length) revealResult();
+    }
+
+    function revealResult() {
+      gameState = 'result';
+      const tally = {};
+      Object.values(votes).forEach(tid => { tally[tid] = (tally[tid] || 0) + 1; });
+      let max = 0, winner = null;
+      Object.entries(tally).forEach(([id, c]) => { if (c > max) { max = c; winner = id; } });
+
+      const resultArea = document.getElementById('resultArea');
+      resultArea.classList.remove('hidden');
+      if (winner === spyId) {
+        resultArea.innerHTML = `<div class="result-box win">Casus doğru bulundu!<br><span class="small">${players[spyId]?.name || 'Casus'} yakalandı.</span></div>`;
+      } else {
+        resultArea.innerHTML = `<div class="result-box lose">Kaybettiniz!<br><span class="small">Casus: ${players[spyId]?.name || 'Bilinmiyor'}</span></div>`;
+      }
+      document.getElementById('btnNewRound').classList.remove('hidden');
+      document.getElementById('btnNewRound').disabled = !isHost;
+    }
+
+    document.getElementById('btnCreate').onclick = async () => {
+      myName = document.getElementById('playerName').value.trim();
+      if (!myName) { alert('Korsan adını yaz!'); return; }
+      document.getElementById('lobbyStatus').textContent = 'Oda oluşturuluyor...';
+      await joinRoom(generateRoomCode(), true);
+    };
+    document.getElementById('btnJoinCode').onclick = async () => {
+      const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+      if (!code) { alert('Oda kodu girin'); return; }
+      document.getElementById('lobbyStatus').textContent = 'Katılıyor...';
+      await joinRoom(code, false);
+    };
+    document.getElementById('btnLeave').onclick = async () => {
+      if (gameChannel) await gameChannel.unsubscribe();
+      if (isHost && lobbyChannel) await lobbyChannel.track({ id: myId, name: myName, isHost: false });
+      gameChannel = null; players = {}; isHost = false; roomCode = '';
+      show('lobby');
+    };
+    document.getElementById('btnStart').onclick = () => {
+      if (!isHost) return;
+      const ids = Object.keys(players);
+      if (ids.length < 3 || ids.length > 8) return;
+      const character = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+      const spyIdChosen = ids[Math.floor(Math.random() * ids.length)];
+      const generalInfo = GENERAL_INFOS[Math.floor(Math.random() * GENERAL_INFOS.length)];
+      broadcast('game_start', { character, spyId: spyIdChosen, generalInfo });
+    };
+    document.getElementById('btnVoteStart').onclick = () => {
+      if (gameState !== 'game') return;
+      broadcast('vote_start_press', {});
+    };
+    document.getElementById('btnNewRound').onclick = () => {
+      if (!isHost) return;
+      broadcast('new_round', {});
+    };
+
+    initLobby();
+
+    // ========== BACKGROUND MUSIC ==========
+    const bgMusic = document.getElementById('bgMusic');
+    const btnMute = document.getElementById('btnMute');
+    const volumeSlider = document.getElementById('volume-slider');
+    let isMuted = false;
+    let savedVolume = 0.35;
+
+    bgMusic.volume = 0.35;
+
+    // Auto-play attempt (browsers often block until user interaction)
+    function tryPlayMusic() {
+      bgMusic.play().catch(() => {
+        // Autoplay blocked – will start on first click
+      });
+    }
+    tryPlayMusic();
+
+    // Start music on first user interaction if blocked
+    document.body.addEventListener('click', function startMusicOnce() {
+      if (bgMusic.paused) {
+        bgMusic.play().catch(() => {});
+      }
+      document.body.removeEventListener('click', startMusicOnce);
+    }, { once: true });
+
+    btnMute.onclick = (e) => {
+      e.stopPropagation();
+      if (isMuted) {
+        bgMusic.volume = savedVolume;
+        volumeSlider.value = savedVolume;
+        btnMute.textContent = '🔊';
+        isMuted = false;
+        if (bgMusic.paused) bgMusic.play().catch(() => {});
+      } else {
+        savedVolume = bgMusic.volume;
+        bgMusic.volume = 0;
+        volumeSlider.value = 0;
+        btnMute.textContent = '🔇';
+        isMuted = true;
+      }
+    };
+
+    volumeSlider.oninput = () => {
+      const vol = parseFloat(volumeSlider.value);
+      bgMusic.volume = vol;
+      savedVolume = vol;
+      isMuted = vol === 0;
+      btnMute.textContent = vol === 0 ? '🔇' : '🔊';
+      if (vol > 0 && bgMusic.paused) bgMusic.play().catch(() => {});
+    };
+  </script>
+</body>
+</html>
