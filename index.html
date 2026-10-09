@@ -1262,7 +1262,7 @@
       "Arlong": 20000000,
       "Bartholomew Kuma": 296000000,
       "Gecko Moria": 320000000,
-      "Koby": 5000000,
+      "Koby": 500000000,
       "Kuro": 16000000,
       "Don Krieg": 17000000,
       "Gin": 12000000,
@@ -1295,6 +1295,101 @@
       "Bepo": 500,
       "Don Chinjao": 542000000
     };
+    // Explicitly researched ability status. true/false means confirmed; null means not confirmed either way.
+    // Keep fruit status separate from Haki status so a known non-user is never labelled "unknown".
+    const SECRET_ABILITIES = {
+      "Monkey D. Luffy": { fruit: true, fruitName: "Hito Hito no Mi, Model: Nika", haki: true },
+      "Roronoa Zoro": { fruit: false, haki: true },
+      "Nami": { fruit: false, haki: null },
+      "Usopp": { fruit: false, haki: true },
+      "Sanji": { fruit: false, haki: true },
+      "Tony Tony Chopper": { fruit: true, fruitName: "Hito Hito no Mi", haki: null },
+      "Nico Robin": { fruit: true, fruitName: "Hana Hana no Mi", haki: null },
+      "Franky": { fruit: false, haki: null },
+      "Brook": { fruit: true, fruitName: "Yomi Yomi no Mi", haki: null },
+      "Jinbe": { fruit: false, haki: true },
+      "Portgas D. Ace": { fruit: true, fruitName: "Mera Mera no Mi", haki: true },
+      "Sabo": { fruit: true, fruitName: "Mera Mera no Mi", haki: true },
+      "Shanks": { fruit: false, haki: true },
+      "Buggy": { fruit: true, fruitName: "Bara Bara no Mi", haki: null },
+      "Dracule Mihawk": { fruit: false, haki: true },
+      "Boa Hancock": { fruit: true, fruitName: "Mero Mero no Mi", haki: true },
+      "Trafalgar Law": { fruit: true, fruitName: "Ope Ope no Mi", haki: true },
+      "Eustass Kid": { fruit: true, fruitName: "Jiki Jiki no Mi", haki: true },
+      "Killer": { fruit: false, haki: true },
+      "X Drake": { fruit: true, fruitName: "Ryu Ryu no Mi, Model: Allosaurus", haki: true },
+      "Basil Hawkins": { fruit: true, fruitName: "Wara Wara no Mi", haki: null },
+      "Jewelry Bonney": { fruit: true, fruitName: "Toshi Toshi no Mi", haki: true },
+      "Capone Bege": { fruit: true, fruitName: "Shiro Shiro no Mi", haki: null },
+      "Scratchmen Apoo": { fruit: true, fruitName: "Oto Oto no Mi", haki: null },
+      "Urouge": { fruit: null, haki: null },
+      "Marshall D. Teach": { fruit: true, fruitName: "Yami Yami no Mi and Gura Gura no Mi", haki: true },
+      "Shiryu": { fruit: true, fruitName: "Suke Suke no Mi", haki: null },
+      "Jesus Burgess": { fruit: true, fruitName: "Riki Riki no Mi", haki: true },
+      "Edward Newgate": { fruit: true, fruitName: "Gura Gura no Mi", haki: true },
+      "Marco": { fruit: true, fruitName: "Tori Tori no Mi, Model: Phoenix", haki: true },
+      "Vista": { fruit: false, haki: true },
+      "Jozu": { fruit: true, fruitName: "Kira Kira no Mi", haki: true },
+      "Kaido": { fruit: true, fruitName: "Uo Uo no Mi, Model: Seiryu", haki: true },
+      "King": { fruit: true, fruitName: "Ryu Ryu no Mi, Model: Pteranodon", haki: true },
+      "Queen": { fruit: true, fruitName: "Ryu Ryu no Mi, Model: Brachiosaurus", haki: true },
+      "Jack": { fruit: true, fruitName: "Zou Zou no Mi, Model: Mammoth", haki: true },
+      "Yamato": { fruit: true, fruitName: "Inu Inu no Mi, Model: Okuchi no Makami", haki: true },
+      "Charlotte Linlin": { fruit: true, fruitName: "Soru Soru no Mi", haki: true },
+      "Charlotte Katakuri": { fruit: true, fruitName: "Mochi Mochi no Mi", haki: true },
+      "Charlotte Smoothie": { fruit: true, fruitName: "Shibo Shibo no Mi", haki: null },
+      "Charlotte Cracker": { fruit: true, fruitName: "Bisu Bisu no Mi", haki: true },
+      "Charlotte Perospero": { fruit: true, fruitName: "Pero Pero no Mi", haki: null },
+      "Donquixote Doflamingo": { fruit: true, fruitName: "Ito Ito no Mi", haki: true },
+      "Trebol": { fruit: true, fruitName: "Beta Beta no Mi", haki: null },
+      "Diamante": { fruit: true, fruitName: "Hira Hira no Mi", haki: null },
+      "Pica": { fruit: true, fruitName: "Ishi Ishi no Mi", haki: null },
+      "Vergo": { fruit: false, haki: true },
+      "Sugar": { fruit: true, fruitName: "Hobi Hobi no Mi", haki: null },
+      "Crocodile": { fruit: true, fruitName: "Suna Suna no Mi", haki: null },
+      "Daz Bones": { fruit: true, fruitName: "Supa Supa no Mi", haki: null },
+      "Bentham": { fruit: true, fruitName: "Mane Mane no Mi", haki: null },
+      "Monkey D. Garp": { fruit: false, haki: true },
+      "Sengoku": { fruit: true, fruitName: "Hito Hito no Mi, Model: Daibutsu", haki: true },
+      "Sakazuki": { fruit: true, fruitName: "Magu Magu no Mi", haki: true },
+      "Borsalino": { fruit: true, fruitName: "Pika Pika no Mi", haki: true },
+      "Kuzan": { fruit: true, fruitName: "Hie Hie no Mi", haki: true },
+      "Issho": { fruit: true, fruitName: "Zushi Zushi no Mi", haki: true },
+      "Aramaki": { fruit: true, fruitName: "Mori Mori no Mi", haki: true },
+      "Smoker": { fruit: true, fruitName: "Moku Moku no Mi", haki: true },
+      "Tashigi": { fruit: false, haki: true },
+      "Koby": { fruit: false, haki: true },
+      "Helmeppo": { fruit: false, haki: true },
+      "Hina": { fruit: true, fruitName: "Ori Ori no Mi", haki: null },
+      "Tsuru": { fruit: true, fruitName: "Woshu Woshu no Mi", haki: null },
+      "Sentomaru": { fruit: false, haki: true },
+      "Rob Lucci": { fruit: true, fruitName: "Neko Neko no Mi, Model: Leopard", haki: true },
+      "Kaku": { fruit: true, fruitName: "Ushi Ushi no Mi, Model: Giraffe", haki: true },
+      "Silvers Rayleigh": { fruit: false, haki: true },
+      "Gol D. Roger": { fruit: false, haki: true },
+      "Kozuki Oden": { fruit: false, haki: true },
+      "Kozuki Momonosuke": { fruit: true, fruitName: "Artificial Uo Uo no Mi, Model: Seiryu", haki: null },
+      "Enel": { fruit: true, fruitName: "Goro Goro no Mi", haki: true },
+      "Magellan": { fruit: true, fruitName: "Doku Doku no Mi", haki: null },
+      "Caesar Clown": { fruit: true, fruitName: "Gasu Gasu no Mi", haki: null },
+      "Shiki": { fruit: true, fruitName: "Fuwa Fuwa no Mi", haki: true },
+      "Donquixote Rosinante": { fruit: true, fruitName: "Nagi Nagi no Mi", haki: null },
+      "Dorry": { fruit: false, haki: null },
+      "Brogy": { fruit: false, haki: null },
+      "Bepo": { fruit: false, haki: null },
+      "Penguin": { fruit: false, haki: null },
+      "Shachi": { fruit: false, haki: null },
+      "Hajrudin": { fruit: false, haki: null },
+      "Jaguar D. Saul": { fruit: false, haki: null }
+    };
+
+    const SECRET_BOUNTY_NOTES = {
+      "Sengoku": "Cross Guild reward reported; exact amount not confirmed",
+      "Kuzan": "Former Marine; no confirmed Cross Guild amount in the current source set",
+      "Axe-Hand Morgan": "No confirmed current Cross Guild reward amount",
+      "Bellemere": "No confirmed Cross Guild reward amount; deceased"
+    };
+
     function secretHintCategories(character) {
       const raw = CHARACTER_DATA[character] || [];
       const group = CHAR_GROUP[character] || '';
@@ -1437,23 +1532,25 @@
 
       const affiliation = affiliationOverrides[character] || groupNames[group] || group || "Unknown";
       const bounty = SECRET_BOUNTIES[character];
-      let bountyHint = "No confirmed bounty listed in the current dataset";
+      let bountyHint = SECRET_BOUNTY_NOTES[character] || "No confirmed bounty listed in the current dataset";
       if (Number.isFinite(bounty)) {
         bountyHint = bounty < 500000000 ? "0–500 million Berries"
           : bounty < 1000000000 ? "500 million–1 billion Berries"
           : "1 billion Berries or more";
       }
 
-      const fruit = raw.some(x => /Devil Fruit user|Devil Fruit kullanıcısı|Meyve kullanıcısı|Şeytan Meyvesi kullanıcısı/i.test(x));
-      const noFruit = raw.some(x => /No Devil Fruit|Devil Fruit yok|Şeytan Meyvesi yok/i.test(x));
-      const haki = raw.some(x => /can use Haki|Haki kullanabiliyor|Haki user|Haki kullanıcısı/i.test(x));
-      let abilityHint = "No confirmed Devil Fruit / Haki data in the current dataset";
-      if (fruit && haki) abilityHint = "Devil Fruit user; Haki confirmed";
-      else if (fruit && noFruit) abilityHint = "Conflicting Devil Fruit data";
-      else if (fruit) abilityHint = "Devil Fruit user; Haki status unknown";
-      else if (noFruit && haki) abilityHint = "No Devil Fruit; Haki confirmed";
-      else if (noFruit) abilityHint = "No Devil Fruit; Haki status unknown";
-      else if (haki) abilityHint = "Haki confirmed; Devil Fruit status unknown";
+      const ability = SECRET_ABILITIES[character] || {};
+      const fruit = ability.fruit === true || (ability.fruit == null && raw.some(x => /Devil Fruit user|Devil Fruit kullanıcısı|Meyve kullanıcısı|Şeytan Meyvesi kullanıcısı/i.test(x)));
+      const noFruit = ability.fruit === false || (ability.fruit == null && raw.some(x => /No Devil Fruit|Devil Fruit yok|Şeytan Meyvesi yok/i.test(x)));
+      const haki = ability.haki === true || (ability.haki == null && raw.some(x => /can use Haki|Haki kullanabiliyor|Haki user|Haki kullanıcısı/i.test(x)));
+      const noHaki = ability.haki === false || (ability.haki == null && raw.some(x => /does not use Haki|Haki kullanmıyor|Haki kullanamaz/i.test(x)));
+      // Never reveal a fruit name or explicitly label unknown information. Show only confirmed binary facts.
+      const abilityFacts = [];
+      if (fruit) abilityFacts.push("Devil Fruit user");
+      else if (noFruit) abilityFacts.push("No Devil Fruit");
+      if (haki) abilityFacts.push("Uses Haki");
+      else if (noHaki) abilityFacts.push("Does not use Haki");
+      const abilityHint = abilityFacts.join("; ");
 
       return [
         { key: "affiliation", label: "Crew / Organization", value: affiliation },
@@ -1461,12 +1558,18 @@
         { key: "ability", label: "Devil Fruit / Haki", value: abilityHint }
       ];
     }
+    let lastSecretHintCategoryKey = null;
     function buildHints(character) {
       // Diğer modların eski ipucu davranışı aynen korunur.
       if (mode === 'secret') {
-        // Every character has all three categories; exactly one is selected at random per round.
-        const categories = auShuffle(secretHintCategories(character));
-        return categories.slice(0, 1).map(c => `${c.label}: ${c.value}`);
+        // Select exactly one of the three categories. Avoid repeating the same
+        // category on consecutive calls when alternatives are available.
+        const categories = secretHintCategories(character);
+        let available = categories.filter(c => c.key !== lastSecretHintCategoryKey);
+        if (!available.length) available = categories;
+        const selected = available[auRnd(available.length)];
+        lastSecretHintCategoryKey = selected.key;
+        return [`${selected.label}: ${selected.value}`];
       }
       const raw = CHARACTER_DATA[character] || [];
       const pool = [...new Set(raw.filter(t => !/^(Kadın karakter|Erkek karakter|Bilinmiyor|Diğer)$/i.test(t) && !/(Korsanları|Korsanlar|Mürettebatı|Ailesi|Baroque Works|Germa 66|Devrimci Ordu|Deniz Kuvvetleri|Dünya Hükümeti|Kaido'nun adamı|Kalp Korsanları|Kuja)/i.test(t)))];
